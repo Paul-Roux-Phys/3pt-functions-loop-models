@@ -77,11 +77,11 @@ public:
         int end1 = arch_end(i), end2 = arch_end(ip1);
         if (site1 == OPENING && site2 == OPENING)
         {
-            set(arch_end(ip1), OPENING);
+            set(end2, OPENING);
         }
         else if (site1 == CLOSING && site2 == CLOSING)
         {
-            set(arch_end(i), CLOSING);
+            set(end1, CLOSING);
         }
     }
 

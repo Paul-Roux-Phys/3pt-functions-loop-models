@@ -4,7 +4,7 @@ using Memoization
 include("compile.jl")
 include("parse.jl")
 
-cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/TransferMatricesCpp/models/ising";
+cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/TransferMatricesCpp/ising";
 bin_dir = "bin"
 res_dir = "results"
 program_name = "evs_z2_antisym_sector"

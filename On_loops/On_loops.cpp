@@ -6,10 +6,15 @@ lattice models including an Ising model in a field]                       */
 
 #include "TransferMatrices.hpp"
 #include "link_patterns.hpp"
+#include <stdexcept>
 using namespace transfer_matrices;
 
+#ifndef LATTICE_SIZE
+#define LATTICE_SIZE 4
+#endif
+
 #pragma region Types
-constexpr std::size_t lattice_size = 4;
+constexpr std::size_t lattice_size = LATTICE_SIZE;
 constexpr std::size_t size         = lattice_size + 2;
 using K = FKKey<size>;
 using V = double;
@@ -19,7 +24,8 @@ using R = RMatrix<Vec, int>;
 #pragma endregion
 
 Vec v[2];
-int data_position = 0;
+Vec initial(2);
+VectorPair vp(&v[0], &v[1]);
 
 #pragma region Weights
 V lambda     = 0.5;
@@ -33,10 +39,10 @@ V w_full     = sin(lambda) + cos(2*lambda);
 void print_weights() {
     cout << "lambda = " << lambda << endl;
     cout << "n_loop = " << n_loop << endl;
-    cout << "w_empty = " << w_empty << endl;
-    cout << "w_turn = " << w_turn << endl;
-    cout << "w_straight = " << w_straight << endl;
-    cout << "w_full = " << w_full << endl;
+    // cout << "w_empty = " << w_empty << endl;
+    // cout << "w_turn = " << w_turn << endl;
+    // cout << "w_straight = " << w_straight << endl;
+    // cout << "w_full = " << w_full << endl;
 }
 #pragma endregion
 
@@ -51,6 +57,22 @@ RMatrix<Vec> contr_aux = contract_aux_space;
 #pragma endregion
 
 #pragma region Implement the R matrix
+void translate_lattice(K& k) {
+    int tmp = k[lattice_size-1];
+    for (int i = lattice_size-2; i >= 0; i--)
+    {
+        k.set(i+1, k[i]);
+    }
+    k.set(0, tmp);
+}
+
+void half_lattice_translation(K& k) {
+    for (int i = 0; i < lattice_size/2; i++)
+    {
+        translate_lattice(k);
+    }
+}
+
 void contract(BV& b, int i) {
     int ip1 = (i+1)%size;
     if (b.key[i] == OPENING && b.key[ip1] == CLOSING) 
@@ -73,6 +95,7 @@ void r_matrix_empty_empty(Vec* v, BV b, int i) {
 
     b2.key.put_arch(i);
     b2.value *= w_turn;
+    *v += b2;
 }
 
 void r_matrix_empty_occ(Vec* v, BV b, int i) {
@@ -140,34 +163,83 @@ void insert_aux_space(Vec* v, BV b) {
 
 void contract_aux_space(Vec* v, BV b) {
     int i1 = size-2, i2 = size-1;
+    if (b.key[i1] == EMPTY && b.key[i2] == EMPTY)
+    {
+        *v += b;
+        return;
+    }
     if (b.key[i1] != EMPTY && b.key[i2] != EMPTY \
              && !(b.key[i1] == DEFECT && b.key[i2] == DEFECT))
     { // both sites are occupied, at least one of them isn't a defect
         contract(b, i1);
         b.key.set(i1, EMPTY);
         b.key.set(i2, EMPTY);
+        *v += b;
     }
-    *v += b;
 }
 #pragma endregion
 
 #pragma region Transfer matrix
+// filter states with too low weights
+void filter(Vec* v, BV b) {
+    if (abs(b.value) > 1e-14)
+    {
+        *v += b;
+    }
+}
+
+void project(Vec* v, BV b) {
+    (*v)[b.key] = b.value;
+    half_lattice_translation(b.key);
+    (*v)[b.key] = -b.value;
+}
+
+RMatrix<Vec> filt = filter;
+RMatrix<Vec> proj = project;
+
 // multiplies v by the transfer matrix.
-// returns a pointer to the vector in which the result is stored.
-void transfer() {
+template <typename Vec>
+void VectorPair<Vec>::transfer() {
     // insert aux space
-    multiply<Vec>(&v[1-data_position], ins_aux, &v[data_position]);
-    data_position = 1 - data_position;
+    mul<>(ins_aux);
     // multiply by r-matrices
     for (int i = 0; i < lattice_size; i++) {
-        multiply<Vec, int>(&v[1-data_position], r_i, &v[data_position], i);
-        data_position = 1 - data_position;
+        mul<int>(r_i, i);
     }
     // contract aux space
-    multiply<Vec>(&v[1-data_position], contr_aux, &v[data_position]);
-    data_position = 1 - data_position;
+    mul<>(contr_aux);
+    // mul<>(proj);
+    factorise_norm();
+    // mul<>(filt);
 }
 #pragma endregion
+
+K initial_key(int nb_defects) {
+    K res;
+    for (int i = 0; i < size; i++)
+    {
+        res.set(i, EMPTY);
+    }
+    for (int i = 0 ; i < nb_defects; i++)
+    {
+        res.set(i, DEFECT);
+    }
+    return res;
+}
+
+void initialise_vector() {
+    K k1 = initial_key(2);
+    K k2 = k1;
+
+    half_lattice_translation(k2);
+
+    BV b1(k1, 1.0);
+    BV b2(k2, -1.0);
+
+    initial += b1;
+    initial += b2;
+    initial /= std::sqrt(2);
+}
 
 #pragma region main function
 #define O OPENING
@@ -175,16 +247,17 @@ void transfer() {
 #define E EMPTY
 #define D DEFECT
 int main() {
-    print_weights();
-    BV init({D, O, C, D, E, E}, 1.0);
-    v[0] += init;
+    initialise_vector();
 
-    transfer();
+    vp += initial;
 
-    v[data_position].print();
-    // cout << "------------------" << endl << endl;
-    // MatrixMul(&v1, &v2, );
-    
+    for (int i = 0; i < 200; i++)
+    {
+        vp.transfer();
+    }
+
+    LargeFloat res = vp.inner_product(initial);
+    cout << res << endl;
     return 0;
 }
 #pragma endregion
