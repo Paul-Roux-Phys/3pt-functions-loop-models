@@ -234,11 +234,11 @@ void initialise_vector() {
     half_lattice_translation(k2);
 
     BV b1(k1, 1.0);
-    BV b2(k2, -1.0);
+    // BV b2(k2, -1.0);
 
     initial += b1;
-    initial += b2;
-    initial /= std::sqrt(2);
+    // initial += b2;
+    // initial /= std::sqrt(2);
 }
 
 #pragma region main function
@@ -251,7 +251,7 @@ int main() {
 
     vp += initial;
 
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 300; i++)
     {
         vp.transfer();
     }
