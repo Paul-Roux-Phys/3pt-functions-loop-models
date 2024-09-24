@@ -10,12 +10,12 @@ include("run_parse.jl")
 cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops";
 bin_dir = "bin"
 res_dir = "results"
-program_name = "two_point_2_defects"
+program_name = "two_point_odd_sector"
 
 cd(cpp_dir)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 4:11
+Lrange = 4:2:10
 
 Threads.@threads for L in Lrange
     println("compiling for size $L")
