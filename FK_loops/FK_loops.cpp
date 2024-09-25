@@ -31,18 +31,10 @@ VectorPair vp(&v[0], &v[1]);
 V lambda     = 0.5;
 V n_loop     = -2*cos(4*lambda); // weight of loops
 V n_ncloop   = -2*cos(4*lambda); // weight of non-contractible loops
-V w_empty    = 1 + sin(lambda) + sin(3*lambda) - sin(5*lambda);
-V w_turn     = 2*sin(2*lambda)*sin((6*lambda+M_PI)/4);
-V w_straight = 1 + sin(3*lambda);
-V w_full     = sin(lambda) + cos(2*lambda);
 
 void print_weights() {
     cout << "lambda = " << lambda << endl;
     cout << "n_loop = " << n_loop << endl;
-    // cout << "w_empty = " << w_empty << endl;
-    // cout << "w_turn = " << w_turn << endl;
-    // cout << "w_straight = " << w_straight << endl;
-    // cout << "w_full = " << w_full << endl;
 }
 #pragma endregion
 
@@ -73,7 +65,7 @@ void half_lattice_translation(K& k) {
     }
 }
 
-void contract(BV& b, int i) {
+void tl_generator(BV& b, int i) {
     int ip1 = (i+1)%size;
     if (b.key[i] == OPENING && b.key[ip1] == CLOSING) 
     { // closing a contractible loop
@@ -84,64 +76,17 @@ void contract(BV& b, int i) {
     { // closing a loop winding around the cylinder
         b.value *= n_ncloop;
     }
-    b.key.contract(i);
-}
-
-void r_matrix_empty_empty(Vec* v, BV b, int i) {
-    BV b2 = b;
-
-    b.value *= w_empty;
-    *v += b;
-
-    b2.key.put_arch(i);
-    b2.value *= w_turn;
-    *v += b2;
-}
-
-void r_matrix_empty_occ(Vec* v, BV b, int i) {
-    BV b2 = b;
-
-    b.value *= w_turn;
-    *v += b;
-
-    b2.key.move_strand(i);
-    b2.value *= w_straight;
-    *v += b2;
-}
-
-void r_matrix_occ_occ(Vec* v, BV b, int i) {
-    BV b2 = b;
-    
-    b.value *= w_full;
-    *v += b;
-
-    if (!(b.key[i] == DEFECT && b.key[(i+1)%size] == DEFECT)) {
-        contract(b2, i);
-        BV b3 = b2;
-        b2.key.set(i, EMPTY);
-        b2.key.set((i+1)%size, EMPTY);
-        b2.value *= w_turn;
-        *v += b2;
-
-        b3.key.put_arch(i);
-        b3.value *= w_full;
-        *v += b3;
-    }
+    b.key.tl_generator(i);
 }
 
 void r_matrix(Vec* v, BV b, int i) {
-    int ip1 = (i+1)%size;
-    if (b.key[i] == EMPTY && b.key[ip1] == EMPTY)
-    {
-        r_matrix_empty_empty(v, b, i);
-    }
-    else if (b.key[i] == EMPTY || b.key[ip1] == EMPTY)
-    {
-        r_matrix_empty_occ(v, b, i);
-    }
-    else
-    {
-        r_matrix_occ_occ(v, b, i);
+    BV b2 = b;
+    
+    *v += b;
+
+    if (!(b2.key[i] == DEFECT && b2.key[(i+1)%size] == DEFECT)) {
+        tl_generator(b2, i);
+        *v += b2;
     }
 }
 #pragma endregion
@@ -149,31 +94,17 @@ void r_matrix(Vec* v, BV b, int i) {
 #pragma region Auxiliary spaces
 void insert_aux_space(Vec* v, BV b) {
     b.key.shift_right();
-
-    BV b2 = b;
-
-    b.key.set(size-1, EMPTY);
-    b.key.set(0, EMPTY);
+    b.key.set(size-1, OPENING);
+    b.key.set(0, CLOSING);
     *v += b;
-
-    b2.key.set(size-1, OPENING);
-    b2.key.set(0, CLOSING);
-    *v += b2;
 }
 
 void contract_aux_space(Vec* v, BV b) {
     int i1 = size-2, i2 = size-1;
-    if (b.key[i1] == EMPTY && b.key[i2] == EMPTY)
-    {
-        *v += b;
-        return;
-    }
-    if (b.key[i1] != EMPTY && b.key[i2] != EMPTY \
-             && !(b.key[i1] == DEFECT && b.key[i2] == DEFECT))
+
+    if (!(b.key[i1] == DEFECT && b.key[i2] == DEFECT))
     { // both sites are occupied, at least one of them isn't a defect
-        contract(b, i1);
-        b.key.set(i1, EMPTY);
-        b.key.set(i2, EMPTY);
+        tl_generator(b, i1);
         *v += b;
     }
 }
@@ -208,9 +139,9 @@ void VectorPair<Vec>::transfer() {
     }
     // contract aux space
     mul<>(contr_aux);
-    mul<>(proj);
-    factorise_norm();
-    mul<>(filt);
+    // mul<>(proj);
+    // factorise_norm();
+    // mul<>(filt);
 }
 #pragma endregion
 
@@ -218,7 +149,10 @@ K initial_key(int nb_defects) {
     K res;
     for (int i = 0; i < size; i++)
     {
-        res.set(i, EMPTY);
+        if (i%2 == 0)
+            res.set(i, OPENING);
+        else
+            res.set(i, CLOSING);
     }
     for (int i = 0 ; i < nb_defects; i++)
     {
@@ -227,11 +161,11 @@ K initial_key(int nb_defects) {
     return res;
 }
 
-void initialise_vector() {
-    K k1 = initial_key(2);
-    K k2 = k1;
+void initialise_vector(int nb_defects) {
+    K k1 = initial_key(nb_defects);
+    // K k2 = k1;
 
-    half_lattice_translation(k2);
+    // half_lattice_translation(k2);
 
     BV b1(k1, 1.0);
     // BV b2(k2, -1.0);
@@ -242,20 +176,27 @@ void initialise_vector() {
 }
 
 #pragma region main function
-#define O OPENING
 #define C CLOSING
 #define E EMPTY
 #define D DEFECT
 int main() {
-    initialise_vector();
+    print_weights();
+    initialise_vector(0);
 
     vp += initial;
+    
+    // vp.print();
+    // for (int i = 0; i < 2; i++)
+    // {
+    //     vp.transfer();
+    //     if (i > 20) cout << vp.inner_product(initial) << endl;
+    // }
+    // vp.print();
+    // return 0;
 
-    for (int i = 0; i < 50; i++)
-    {
-        vp.transfer();
-        if (i > 20) cout << vp.inner_product(initial) << endl;
-    }
-    return 0;
+    Matrix<VectorPair<Vec>> M(&vp, 10);
+    M.find_eigenvalues(true);
+    cout << M.sprint_eigenvalues();
+
 }
 #pragma endregion

@@ -26,9 +26,8 @@ end
 # Run the program and parse the eigenvalues
 function read_res(size, bin_dir, bin)
     f = read(`$bin_dir/$bin`, String)
-    # pattern = r"\(([^,]+),\s*([^)]+)\)" # pattern to match complex numbers: avoids potential
-    #                                     # error lines
-    pattern = r"big\"2\""
-    Λs = [parse_bigfloat(l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
-    return Λs
+    pattern = r"\(([^,]+),\s*([^)]+)\)" # pattern to match complex numbers: avoids potential
+                                        # error lines
+    # pattern = r"big\"2\""
+    [parse_cmplx(l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
 end
