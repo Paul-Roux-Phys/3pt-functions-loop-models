@@ -9,12 +9,12 @@ include("run_parse.jl")
 cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/FK_loops";
 bin_dir = "bin"
 res_dir = "results"
-program_name = "two_point_odd_sector"
+program_name = "two_point_2defects"
 
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 4:2:16
+Lrange = 4:2:18
 
 Threads.@threads for L in Lrange
     println("compiling for size $L")

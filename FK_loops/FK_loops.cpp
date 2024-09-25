@@ -139,9 +139,9 @@ void VectorPair<Vec>::transfer() {
     }
     // contract aux space
     mul<>(contr_aux);
-    mul<>(proj);
+    // mul<>(proj);
     factorise_norm();
-    mul<>(filt);
+    // mul<>(filt);
 }
 #pragma endregion
 
@@ -168,11 +168,11 @@ void initialise_vector(int nb_defects) {
     half_lattice_translation(k2);
 
     BV b1(k1, 1.0);
-    BV b2(k2, -1.0);
+    // BV b2(k2, -1.0);
 
     initial += b1;
-    initial += b2;
-    initial /= std::sqrt(2);
+    // initial += b2;
+    // initial /= std::sqrt(2);
 }
 
 #pragma region main function
