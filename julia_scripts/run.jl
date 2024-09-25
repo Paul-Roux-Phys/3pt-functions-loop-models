@@ -14,7 +14,7 @@ program_name = "ev_no_defect"
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 6:2:8
+Lrange = 6:2:16
 
 Threads.@threads for L in Lrange
     println("compiling for size $L")
