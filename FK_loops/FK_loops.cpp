@@ -185,13 +185,13 @@ int main() {
 
     vp += initial;
     
-    vp.print();
-    for (int i = 0; i < 2; i++)
+    // vp.print();
+    for (int i = 0; i < 100; i++)
     {
         vp.transfer();
-        if (i > 20) cout << vp.inner_product(initial) << endl;
+        if (i > 50) cout << vp.inner_product(initial) << endl;
     }
-    vp.print();
+    // vp.print();
     return 0;
 
     // Matrix<VectorPair<Vec>> M(&vp, 10);

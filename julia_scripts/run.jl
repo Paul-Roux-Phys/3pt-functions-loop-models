@@ -16,13 +16,14 @@ bin(size) = "$(program_name)_$(size)"
 
 Lrange = 4:2:18
 
+# Compile
 Threads.@threads for L in Lrange
     println("compiling for size $L")
     run(`sh -c "make size=$L bin=$(bin(L)) | grep -v 'ld:'"`);
 end
 
-# C(L) = < σ | T(L)^M | σ > where σ is antisymmetric under translation by half of the sites
-data = Dict{Int, Vector{ComplexF64}}()
+# Execute and save
+data = Dict{Int, Dict{Int, BigFloat}}()
 @memoize datum(L) = read_res(L, bin_dir, bin(L))
 
 try
@@ -34,13 +35,13 @@ end
 for L in Lrange
     println("running for size $L")
 
-    data[L] = datum(L)
+    # data[L] = datum(L)
 
-    # Cs[L] = Dict{Int, BigFloat}()
+    data[L] = Dict{Int, BigFloat}()
 
-    # for (i, c) in enumerate(C(L))
-    #     Cs[L][20+i] = C(L)[i]
-    # end
+    for (i, c) in enumerate(datum(L))
+        data[L][50+i] = c
+    end
 
     @save "$(res_dir)/$(program_name).jld2" data
     println("finished size $L")
