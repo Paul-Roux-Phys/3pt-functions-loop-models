@@ -13,6 +13,8 @@ using namespace transfer_matrices;
 #define LATTICE_SIZE 4
 #endif
 
+// #define AUX_SPACE
+
 #pragma region Types
 constexpr std::size_t lattice_size = LATTICE_SIZE;
 constexpr std::size_t size         = lattice_size + 2;
@@ -139,9 +141,9 @@ void VectorPair<Vec>::transfer() {
     }
     // contract aux space
     mul<>(contr_aux);
-    // mul<>(proj);
+    mul<>(proj);
     factorise_norm();
-    // mul<>(filt);
+    mul<>(filt);
 }
 #pragma endregion
 
@@ -168,11 +170,11 @@ void initialise_vector(int nb_defects) {
     half_lattice_translation(k2);
 
     BV b1(k1, 1.0);
-    // BV b2(k2, -1.0);
+    BV b2(k2, -1.0);
 
     initial += b1;
-    // initial += b2;
-    // initial /= std::sqrt(2);
+    initial += b2;
+    initial /= std::sqrt(2);
 }
 
 #pragma region main function
@@ -180,12 +182,11 @@ void initialise_vector(int nb_defects) {
 #define E EMPTY
 #define D DEFECT
 int main() {
-    print_weights();
     initialise_vector(2);
 
     vp += initial;
     
-    // vp.print();
+    vp.print();
     for (int i = 0; i < 100; i++)
     {
         vp.transfer();
