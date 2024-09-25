@@ -2,14 +2,15 @@ CPPC := g++
 FLAGS := -std=c++20 -O3
 WARNINGS := -Wall -Wno-overloaded-virtual
 
-ifeq ($HOSTNAME, thanos)
-INCLUDE_PATH := ~/cpp_libs
+ifeq ($(shell hostname), thanos)
+INCLUDE_PATH := /home/roux/cpp_libs
+WARNINGS += -Wno-unknown-pragmas -Wno-sign-compare
 else
 INCLUDE_PATH := /usr/local/opt
 endif
 
-INCLUDES := -I$INCLUDE_PATH/arpackpp/include \
-			-I$INCLUDE_PATH/libtransfer_matrices/include
+INCLUDES := -I$(INCLUDE_PATH)/arpackpp/include \
+			-I$(INCLUDE_PATH)/libtransfermatrices/include
 
 LIBS := -larpack -lblas
 
