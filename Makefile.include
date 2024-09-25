@@ -2,8 +2,15 @@ CPPC := g++
 FLAGS := -std=c++20 -O3
 WARNINGS := -Wall -Wno-overloaded-virtual
 
-INCLUDES := -I/usr/local/opt/arpackpp/include \
-			-I/usr/local/opt/transfer_matrices/include
+ifeq ($HOSTNAME, thanos)
+INCLUDE_PATH := ~/cpp_libs
+else
+INCLUDE_PATH := /usr/local/opt
+endif
+
+INCLUDES := -I$INCLUDE_PATH/arpackpp/include \
+			-I$INCLUDE_PATH/libtransfer_matrices/include
+
 LIBS := -larpack -lblas
 
 SRC := $(FILENAME).cpp
