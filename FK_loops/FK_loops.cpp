@@ -181,7 +181,7 @@ void initialise_vector(int nb_defects) {
 #define D DEFECT
 int main() {
     print_weights();
-    initialise_vector(0);
+    initialise_vector(2);
 
     vp += initial;
     

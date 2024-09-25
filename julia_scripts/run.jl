@@ -9,7 +9,7 @@ include("run_parse.jl")
 cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/FK_loops";
 bin_dir = "bin"
 res_dir = "results"
-program_name = "ev_no_defect"
+program_name = "ev_2_defects"
 
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
