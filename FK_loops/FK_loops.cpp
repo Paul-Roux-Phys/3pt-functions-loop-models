@@ -139,9 +139,9 @@ void VectorPair<Vec>::transfer() {
     }
     // contract aux space
     mul<>(contr_aux);
-    // mul<>(proj);
-    // factorise_norm();
-    // mul<>(filt);
+    mul<>(proj);
+    factorise_norm();
+    mul<>(filt);
 }
 #pragma endregion
 
@@ -163,16 +163,16 @@ K initial_key(int nb_defects) {
 
 void initialise_vector(int nb_defects) {
     K k1 = initial_key(nb_defects);
-    // K k2 = k1;
+    K k2 = k1;
 
-    // half_lattice_translation(k2);
+    half_lattice_translation(k2);
 
     BV b1(k1, 1.0);
-    // BV b2(k2, -1.0);
+    BV b2(k2, -1.0);
 
     initial += b1;
-    // initial += b2;
-    // initial /= std::sqrt(2);
+    initial += b2;
+    initial /= std::sqrt(2);
 }
 
 #pragma region main function
@@ -185,18 +185,18 @@ int main() {
 
     vp += initial;
     
-    // vp.print();
-    // for (int i = 0; i < 2; i++)
-    // {
-    //     vp.transfer();
-    //     if (i > 20) cout << vp.inner_product(initial) << endl;
-    // }
-    // vp.print();
-    // return 0;
+    vp.print();
+    for (int i = 0; i < 2; i++)
+    {
+        vp.transfer();
+        if (i > 20) cout << vp.inner_product(initial) << endl;
+    }
+    vp.print();
+    return 0;
 
-    Matrix<VectorPair<Vec>> M(&vp, 10);
-    M.find_eigenvalues(true);
-    cout << M.sprint_eigenvalues();
+    // Matrix<VectorPair<Vec>> M(&vp, 10);
+    // M.find_eigenvalues(true);
+    // cout << M.sprint_eigenvalues();
 
 }
 #pragma endregion
