@@ -115,7 +115,7 @@ void contract_aux_space(Vec* v, BV b) {
 #pragma region Transfer matrix
 // filter states with too low weights
 void filter(Vec* v, BV b) {
-    if (abs(b.value) > 1e-14)
+    if (std::abs(b.value) > 1e-14)
     {
         *v += b;
     }
@@ -136,7 +136,7 @@ void VectorPair<Vec>::transfer() {
     // insert aux space
     mul<>(ins_aux);
     // multiply by r-matrices
-    for (int i = 0; i < lattice_size; i++) {
+    for (uint i = 0; i < lattice_size; i++) {
         mul<int>(r_i, i);
     }
     // contract aux space
@@ -149,14 +149,14 @@ void VectorPair<Vec>::transfer() {
 
 K initial_key(int nb_defects) {
     K res;
-    for (int i = 0; i < size; i++)
+    for (uint i = 0; i < size; i++)
     {
         if (i%2 == 0)
             res.set(i, OPENING);
         else
             res.set(i, CLOSING);
     }
-    for (int i = 0 ; i < nb_defects; i++)
+    for (uint i = 0 ; i < nb_defects; i++)
     {
         res.set(i, DEFECT);
     }
@@ -192,7 +192,7 @@ int main() {
         vp.transfer();
         if (i > 50) cout << vp.inner_product(initial) << endl;
     }
-    // vp.print();
+    vp.print();
     return 0;
 
     // Matrix<VectorPair<Vec>> M(&vp, 10);
