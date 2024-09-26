@@ -14,12 +14,12 @@ elseif gethostname() == "thanos"
 end
 bin_dir = "bin"
 res_dir = "results"
-program_name = "two_point_2defects"
+program_name = "two_point_current"
 
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 4:2:18
+Lrange = 6:2:18
 
 # Compile
 Threads.@threads for L in Lrange
