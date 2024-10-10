@@ -2,11 +2,16 @@ using JLD2
 
 using JLD2 # save data to files
 using Memoization,
-    Base.Threads
+    Base.Threads,
+    Sockets
 
 include("run_parse.jl")
 
-cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops";
+if gethostname() == "Proux.local"
+    cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/FK_loops";
+elseif gethostname() == "thanos"
+    cpp_dir = "/home/roux/transfermatrices/FK_loops"
+end
 bin_dir = "bin"
 res_dir = "results"
 program_name = "two_point_current_angles"
