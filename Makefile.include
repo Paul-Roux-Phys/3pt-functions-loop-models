@@ -1,6 +1,6 @@
 CPPC := g++
 FLAGS := -std=c++20 -O3
-WARNINGS := -Wall -Wno-overloaded-virtual
+Warnings := -Wall -Wno-overloaded-virtual
 
 ifeq ($(shell hostname), thanos)
 INCLUDE_PATH := /home/roux/cpp_libs

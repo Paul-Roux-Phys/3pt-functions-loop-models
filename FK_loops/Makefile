@@ -1,3 +1,3 @@
-FILENAME := FK_loops
+FILENAME := main
 
 -include ../Makefile.include

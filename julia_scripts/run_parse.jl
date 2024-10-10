@@ -2,32 +2,21 @@
 The output is assumed to be a set of complex numbers, separated by newline characters
 and written as (real, imag) where real and imag are floats =#
 
-function parse_cmplx(s)
+function parse_complex(s)
     s = strip(s, ['(', ')', '\n']) # remove parentheses
     s = split(s, ",")
 
-    real = parse(Float64, s[1])
-    imag = parse(Float64, s[2])
+    real = parse(Complex{BigFloat}, s[1])
+    imag = parse(Complex{BigFloat}, s[2])
 
     real + imag*im
 end
 
-function parse_bigfloat(s)
-    s = strip(s, '\n')
-    s = split(s, '*')
-    s2 = split(s[2], '^')
-
-    coeff = parse(Float64, s[1])
-    exp   = parse(Int, s2[2])
-
-    coeff * big"2"^exp
-end
-
 # Run the program and parse the eigenvalues
 function read_res(size, bin_dir, bin)
-    f = read(`$bin_dir/$bin`, String)
+    f = read(`sh -c "$bin_dir/$bin | cut -f 2"`, String)
     # pattern = r"\(([^,]+),\s*([^)]+)\)" # pattern to match complex numbers: avoids potential
     #                                     # error lines
-    pattern = r"big\"2\""
-    [parse_bigfloat(l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
+    pattern = r"e+"
+    [parse_complex(l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
 end

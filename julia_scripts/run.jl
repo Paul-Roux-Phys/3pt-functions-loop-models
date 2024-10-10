@@ -6,20 +6,20 @@ using Memoization,
 
 include("run_parse.jl")
 
-cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/FK_loops";
+cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops";
 bin_dir = "bin"
 res_dir = "results"
-program_name = "two_point_current"
+program_name = "two_point_current_angles"
 
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 6:2:18
+Lrange = 4:10
 
 # Compile
 Threads.@threads for L in Lrange
     println("compiling for size $L")
-    run(`sh -c "make size=$L bin=$(bin(L)) | grep -v 'ld:'"`);
+    run(`sh -c "make size=$L bin=$(bin(L))"`);
 end
 
 # Execute and save
@@ -40,7 +40,7 @@ for L in Lrange
     data[L] = Dict{Int, BigFloat}()
 
     for (i, c) in enumerate(datum(L))
-        data[L][50+i] = c
+        data[L][10*(L+2)+i] = c
     end
 
     @save "$(res_dir)/$(program_name).jld2" data
