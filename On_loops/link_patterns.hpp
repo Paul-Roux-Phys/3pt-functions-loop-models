@@ -14,18 +14,26 @@ enum SITE {
     EMPTY,
     OPENING,
     CLOSING,
-    DEFECT
+    BOT_DEF,
+    MID_DEF=5,
 };
+constexpr uint DEFECT = BOT_DEF;
 
 template<std::size_t size=4>
-class FKKey : public key_64_bit_t<size> {
+class OnKey : public key_64_bit_t<size> {
 public:
     using key_64_bit_t<size>::key_64_bit_t; // use base class constructors
     using key_64_bit_t<size>::set;
 
+    OnKey() {
+        for (int i = 0; i < size; i++) {
+            set(i, EMPTY);
+        }
+    }
+
     int arch_end(int i) {
         int site = (*this)[i];
-        if (site == EMPTY || site == DEFECT) {
+        if (site == EMPTY || site >= DEFECT) {
             return i;
         }
         int direction = (site == OPENING) ? 1 : -1;
@@ -65,6 +73,46 @@ public:
         return (end == CLOSING) ? end : i;
     }
 
+    bool is_bottom(int i) {
+        return BOT_DEF <= (*this)[i] < MID_DEF;
+    }
+    
+    bool is_middle(int i) {
+        return MID_DEF <= (*this)[i];
+    }
+
+    int nb_defects() {
+        int res = 0;
+        for (int i = 0; i < size; i++)
+        {
+            if ((*this)[i] >= DEFECT)
+                res += 1;
+        }
+        return res;
+    }
+
+    void permute_defects() {
+        std::vector<int> defect_indices;
+        for (int i = 0; i < size; i++) {
+            if ((*this)[i] >= DEFECT) {
+                defect_indices.push_back(i);
+            }
+        }
+        if (defect_indices.size() > 1) {
+            int last = (*this)[defect_indices.back()]; // save last value
+            for (int i = defect_indices.size() - 1; i >= 0; i--) {
+                set(defect_indices[i], (*this)[i-1]);
+            }
+            set(defect_indices[0], last);
+        }
+    }
+
+    void permute_defects(int n) {
+        for (int i = 0; i < n; i++) {
+            permute_defects();
+        }
+    }
+
     void contract_arches(int i) {
         int ip1 = (i+1)%size;
         int site1 = (*this)[i], site2 = (*this)[ip1];
@@ -88,16 +136,36 @@ public:
     void contract_arch_defect(int i) {
         // Contract an arch and a defect between positions i and i+1
         int ip1 = (i+1)%size;
-        int arch = ((*this)[i] == DEFECT) ? ip1 : i;
-        set(arch_end(arch), DEFECT);
+        int arch = ((*this)[i] >= DEFECT) ? ip1 : i;
+        int def = ((*this)[i] >= DEFECT) ? i : ip1;
+        set(arch_end(arch), (*this)[def]);
     }
 
-    void contract(int i) {
+    bool can_contract_defects(int i, int min_defects) {
+        int ip1 = (i+1)%size;
+        return (((is_bottom(i) && is_middle(ip1)) \
+            || (is_bottom(ip1) && is_middle(i))) \
+            && nb_defects()-2 >= min_defects);
+    }
+
+    bool can_contract_sites(int i, int min_defects) {
+        int ip1 = (i+1)%size;
+        return (can_contract_defects(i, min_defects)
+                || (*this)[i] < DEFECT || (*this)[ip1] < DEFECT);
+    }
+
+    void contract(int i, int min_defects) {
+        int ip1 = (i+1)%size;
         // Contract occupied sites i and i+1
-        if (((*this)[i] == DEFECT) != ((*this)[(i+1)%size] == DEFECT)) // XOR: one of the two sites is a defect
+        if (((*this)[i] >= DEFECT) != ((*this)[(i+1)%size] >= DEFECT)) // XOR: one of the two sites is a defect
         {
             contract_arch_defect(i);
-        } else
+        }
+        else if (can_contract_defects(i, min_defects))
+        {
+            // nothing to do here
+        }
+        else
         {
             contract_arches(i);
         }
