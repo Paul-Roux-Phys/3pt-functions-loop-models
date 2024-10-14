@@ -12,11 +12,15 @@ function parse_complex(s)
     real + imag*im
 end
 
+function parse_csv()
+    
+end
+
 # Run the program and parse the eigenvalues
 function read_res(size, bin_dir, bin)
     f = read(`sh -c "$bin_dir/$bin | cut -f 2"`, String)
     # pattern = r"\(([^,]+),\s*([^)]+)\)" # pattern to match complex numbers: avoids potential
     #                                     # error lines
     pattern = r"e+"
-    [parse_complex(l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
+    [parse(BigFloat, l) for l in eachline(IOBuffer(f)) if occursin(pattern, l)]
 end

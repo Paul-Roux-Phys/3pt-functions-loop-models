@@ -22,7 +22,7 @@ using boost::multiprecision::cpp_complex_100;
 constexpr std::size_t lattice_size = LATTICE_SIZE;
 constexpr std::size_t size         = lattice_size + 2;
 using K = OnKey<size>;
-using V = cpp_complex_100;
+using V = double;
 using BV = BasisVector<K, V>;
 using Vec = Vector<BV, key_64_bit_hash_t<size>>;
 using R = RMatrix<Vec, int>;
@@ -32,13 +32,16 @@ Vec initial(2);
 VectorPair vp(&v[0], &v[1]);
 
 #pragma region Weights
-V lambda     = 0.5;
-V n_loop     = -2*cos(4*lambda); // weight of loops
-V n_ncloop   = -2*cos(4*lambda); // weight of non-contractible loops
-V w_empty    = 1 + sin(lambda) + sin(3*lambda) - sin(5*lambda);
-V w_turn     = 2*sin(2*lambda)*sin((6*lambda+M_PI)/4);
-V w_straight = 1 + sin(3*lambda);
-V w_full     = sin(lambda) + cos(2*lambda);
+V lambda;
+V n_loop, n_ncloop, w_empty, w_turn, w_straight, w_full;
+void set_weights(V lambda) {
+    n_loop = -2 * cos(4 * lambda);   // weight of loops
+    n_ncloop = -2 * cos(4 * lambda); // weight of non-contractible loops
+    w_empty = 1 + sin(lambda) + sin(3 * lambda) - sin(5 * lambda);
+    w_turn = 2 * sin(2 * lambda) * sin((6 * lambda + M_PI) / 4);
+    w_straight = 1 + sin(3 * lambda);
+    w_full = sin(lambda) + cos(2 * lambda);
+}
 
 void print_weights() {
     cout << "lambda = " << lambda << endl;

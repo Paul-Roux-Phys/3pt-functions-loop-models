@@ -74,7 +74,7 @@ public:
     }
 
     bool is_bottom(int i) {
-        return BOT_DEF <= (*this)[i] < MID_DEF;
+        return BOT_DEF <= (*this)[i] && (*this)[i] < MID_DEF;
     }
     
     bool is_middle(int i) {

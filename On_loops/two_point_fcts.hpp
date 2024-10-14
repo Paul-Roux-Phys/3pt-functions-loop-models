@@ -1,4 +1,8 @@
+#pragma once
 #include "r_matrix.hpp"
+#include "three_point_fcts.hpp"
+
+void project_on_antisymmetric_part(Vec* v);
 
 Vec two_defects_antisymmetrized_state()
 {
@@ -17,56 +21,65 @@ Vec two_defects_antisymmetrized_state()
     return res;
 }
 
-void project_on_antisymmetric_part()
+Vec two_defects_symmetrized_state()
 {
-    int pos_def1, pos_def2;
-    for (auto it = vp.begin(); it != vp.end(); it++)
-    {
-        BV b(*it);
-        for (int i = 0; i < lattice_size; i++)
-        {
-            if (b.key[i] == BOT_DEF)
-                pos_def1 = i;
-            if (b.key[i] == BOT_DEF+1)
-                pos_def2 = i;
-        }
+    Vec res(2);
+    K k;
+    k.set(0, BOT_DEF);
+    k.set(1, BOT_DEF+1);
 
-        K k_op = b.key;
-        k_op.set(pos_def1, BOT_DEF+1);
-        k_op.set(pos_def2, BOT_DEF);
+    res += BV(k, 1);
 
-        (*v)[k_op] = -(*v)[b.key];
-    }
+    k.set(1, BOT_DEF);
+    k.set(0, BOT_DEF+1);
+
+    res += BV(k, 1);
+    
+    return res;
 }
 
-void transfer()
+void transfer(int k3)
 {
     // insert aux space
     vp.mul<>(ins_aux);
     // multiply by r-matrices
     for (int i = 0; i < lattice_size; i++)
     {
-        vp.mul<int, int>(r_i, i, 2);
+        vp.mul<int, int>(r_i, i, k3);
     }
     // contract aux space
-    vp.mul<int>(contr_aux, 2);
+    vp.mul<int>(contr_aux, k3);
     vp.factorise_norm();
 }
 
-LargeFloat compute_current_two_point_function(int cylinder_size)
+LargeFloat compute_two_point_function_current(int half_size)
 {
     Vec init_end_state(2);
     init_end_state = two_defects_antisymmetrized_state();
     vp += init_end_state;
 
-    for (int i = 0; i < cylinder_size; i++)
+    vp /= 2;
+
+    for (int i = 0; i < 2*half_size; i++)
     {
-        transfer();
-        project_on_antisymmetric_part();
-        if (i >= cylinder_size / 2)
-            cout << i + cylinder_size << "\t"
-                 << std::setprecision(15) << vp.inner_product(init_end_state)
-                 << endl;
+        transfer(2);
+        project_on_antisymmetric_part(vp.get());
+    }
+
+    return vp.inner_product(init_end_state);
+}
+
+LargeFloat compute_two_point_function_2leg(int half_size)
+{
+    Vec init_end_state(2);
+    init_end_state = two_defects_symmetrized_state();
+    vp += init_end_state;
+
+    vp /= 2;
+
+    for (int i = 0; i < 2*half_size; i++)
+    {
+        transfer(2);
     }
 
     return vp.inner_product(init_end_state);

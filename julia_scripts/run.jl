@@ -8,18 +8,18 @@ using Memoization,
 include("run_parse.jl")
 
 if gethostname() == "Proux.local"
-    cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/FK_loops";
+    cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops";
 elseif gethostname() == "thanos"
-    cpp_dir = "/home/roux/transfermatrices/FK_loops"
+    cpp_dir = "/home/roux/transfermatrices/On_loops"
 end
 bin_dir = "bin"
 res_dir = "results"
-program_name = "two_point_current_angles"
+program_name = "3pt_11_10_10"
 
 cd(cpp_dir); run(`sh -c "mkdir -p results"`)
 bin(size) = "$(program_name)_$(size)"
 
-Lrange = 4:10
+Lrange = 5:6
 
 # Compile
 Threads.@threads for L in Lrange
@@ -28,7 +28,7 @@ Threads.@threads for L in Lrange
 end
 
 # Execute and save
-data = Dict{Int, Dict{Int, BigFloat}}()
+data = Dict{Int, String}()
 @memoize datum(L) = read_res(L, bin_dir, bin(L))
 
 try
@@ -39,15 +39,7 @@ end
 
 for L in Lrange
     println("running for size $L")
-
-    # data[L] = datum(L)
-
-    data[L] = Dict{Int, BigFloat}()
-
-    for (i, c) in enumerate(datum(L))
-        data[L][10*(L+2)+i] = c
-    end
-
+    data[L] = read(`$(bin_dir)/$(bin(L))`, String)
     @save "$(res_dir)/$(program_name).jld2" data
     println("finished size $L")
 end
