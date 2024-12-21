@@ -1,33 +1,74 @@
 #include "three_point_fcts.hpp"
-// #include "amplitudes.hpp"
+#include <unistd.h>
+#include <stdio.h>
 
 #define O OPENING
 #define C CLOSING
 #define E EMPTY
-int main()
+int main(int argc, char* argv[])
 {
-    cout << "lambda" << "\t" << std::setw(20) << "n" << "\t" << "omega" << endl;
-    for (lambda = 0.43; lambda < std::sqrt(1.5); lambda += 0.04)
-    {
-        set_weights(lambda);
-        int half_size = 20 * lattice_size;
-        LargeFloat c123 = compute_three_point_function_current_2leg_2leg(half_size);
-        vp.clear();
-        LargeFloat c101 = compute_two_point_function_current(half_size);
-        vp.clear();
-        LargeFloat c220 = compute_three_point_function_2leg_2leg_id(half_size);
-        vp.clear();
-        LargeFloat c000 = compute_partition_function(half_size);
-        vp.clear();
+    int flags, opt;
+    int diagonals = 0;
 
-        // cout << "c123 = " << c123 << endl;
-        // cout << "c101 = " << c101 << endl;
-        // cout << "c220 = " << c220 << endl;
-        // cout << "c000 = " << c000 << endl;
+    flags = 0;
 
-        cout << lambda << "\t" << std::setw(20) << std::setprecision(15) << n_loop << "\t"
-             << std::setprecision(15) << c123 / c220 * sqrt(abs(c000 / c101)) << endl;
-    }
-    cout << endl;
+    int k1, k2, k3, rs1, rs2, rs3, starting_position;
+    V P1, P3;
+
+    // while ((opt = getopt(argc, argv, "d:")) != -1)
+    // {
+    //     switch (opt)
+    //     {
+    //     case 'd':
+    //         diagonals = atoi(optarg);
+    //         break;
+    //     default: /* '?' */
+    //         lambda = std::stod(argv[1]);
+    //         k1 = std::stoi(argv[2]);
+    //         rs1 = std::stoi(argv[3]);
+    //         k2 = std::stoi(argv[4]);
+    //         rs2 = std::stoi(argv[5]);
+    //         k3 = std::stoi(argv[6]);
+    //         rs3 = std::stoi(argv[7]);
+    //         set_weights(lambda);
+    //     }
+    // }
+
+    lambda = std::stod(argv[1]);
+    k1 = std::stoi(argv[2]);
+    rs1 = std::stoi(argv[3]);
+    k2 = std::stoi(argv[4]);
+    rs2 = std::stoi(argv[5]);
+    k3 = std::stoi(argv[6]);
+    rs3 = std::stoi(argv[7]);
+    set_weights(lambda);
+
+    // switch (diagonals)
+    // {
+    // case 0:
+    //     cout << "no diagonal fields" << endl;
+    //     break;
+    // case 1:
+    //     cout << "diagonal at position 1" << endl;
+    //     break;
+    // case 3:
+    //     cout << "diagonal at position 3" << endl;
+    //     break;
+    // case 13:
+    //     cout << "diagonal at positions 1 and 3" << endl;
+    //     break;
+    // default:
+    //     cout << "error in -d options" << endl;
+    //     return 1;
+    // }
+
+    // cout << "argv" << argv << endl;
+    // cout << "optind = " << optind << endl;
+    // cout << "argc = " << argc << endl;
+
+    int half_size = 10 * lattice_size;
+    cout << std::setprecision(15) << compute_3pt_function(half_size, k1, k2, k3, rs1, rs2, rs3, 0).real()
+         << endl;
+
     return 0;
 }

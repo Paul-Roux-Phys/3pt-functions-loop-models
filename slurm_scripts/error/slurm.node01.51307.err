@@ -1,0 +1,23 @@
+ERROR: LoadError: TaskFailedException
+
+    nested task error: UndefVarError: `c222` not defined
+    Stacktrace:
+     [1] macro expansion
+       @ ~/transfermatrices/julia_scripts/move_bottom_insertion.jl:14 [inlined]
+     [2] (::var"#22#threadsfor_fun#5"{var"#22#threadsfor_fun#4#6"{UnitRange{Int64}}})(tid::Int64; onethread::Bool)
+       @ Main ./threadingconstructs.jl:215
+     [3] #22#threadsfor_fun
+       @ ./threadingconstructs.jl:182 [inlined]
+     [4] (::Base.Threads.var"#1#2"{var"#22#threadsfor_fun#5"{var"#22#threadsfor_fun#4#6"{UnitRange{Int64}}}, Int64})()
+       @ Base.Threads ./threadingconstructs.jl:154
+
+...and 8 more exceptions.
+
+Stacktrace:
+ [1] threading_run(fun::var"#22#threadsfor_fun#5"{var"#22#threadsfor_fun#4#6"{UnitRange{Int64}}}, static::Bool)
+   @ Base.Threads ./threadingconstructs.jl:172
+ [2] macro expansion
+   @ ./threadingconstructs.jl:220 [inlined]
+ [3] top-level scope
+   @ ~/transfermatrices/julia_scripts/move_bottom_insertion.jl:219
+in expression starting at /home/roux/transfermatrices/julia_scripts/move_bottom_insertion.jl:13

@@ -1,6 +1,0 @@
--std=c++20
--O3
--larpack
--lblas
--I/usr/local/opt/libtransfermatrices/include
--I/usr/local/arpackpp/include

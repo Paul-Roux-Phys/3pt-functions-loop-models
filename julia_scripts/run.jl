@@ -7,8 +7,8 @@ using Memoization,
 
 include("run_parse.jl")
 
-if gethostname() == "Proux.local"
-    cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops";
+if gethostname() == "Proux"
+    cpp_dir = "/Users/Paul/Documents/Recherche/projet_these/code/transfer_matrices/TransferMatricesCpp/On_loops/cpp_program";
 elseif gethostname() == "thanos"
     cpp_dir = "/home/roux/transfermatrices/On_loops"
 end
@@ -38,10 +38,12 @@ catch
 end
 
 for L in Lrange
-    println("running for size $L")
-    data[L] = read(`$(bin_dir)/$(bin(L))`, String)
+    run(`sh -c "echo 'started size $L'"`)
+    time_taken = @elapsed begin
+        data[L] = read(`$(bin_dir)/$(bin(L))`, String)
+    end
     @save "$(res_dir)/$(program_name).jld2" data
-    println("finished size $L")
-end
+    run(`sh -c "echo 'finished size $L. Took $(time_taken) seconds.'"`)
+end 
 
 @save "$(res_dir)/$(program_name).jld2" data

@@ -14,6 +14,7 @@ lattice models including an Ising model in a field]]                       */
 using namespace transfer_matrices;
 using boost::multiprecision::cpp_dec_float_100;
 using boost::multiprecision::cpp_complex_100;
+using boost::multiprecision::cpp_complex_double;
 
 #ifndef LATTICE_SIZE
 #define LATTICE_SIZE 4
@@ -22,7 +23,7 @@ using boost::multiprecision::cpp_complex_100;
 constexpr std::size_t lattice_size = LATTICE_SIZE;
 constexpr std::size_t size         = lattice_size + 2;
 using K = OnKey<size>;
-using V = double;
+using V = cpp_complex_100;
 using BV = BasisVector<K, V>;
 using Vec = Vector<BV, key_64_bit_hash_t<size>>;
 using R = RMatrix<Vec, int>;
@@ -31,9 +32,9 @@ Vec v[2];
 Vec initial(2);
 VectorPair vp(&v[0], &v[1]);
 
-#pragma region Weights
 V lambda;
 V n_loop, n_ncloop, w_empty, w_turn, w_straight, w_full;
+V pi("3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230");
 void set_weights(V lambda) {
     n_loop = -2 * cos(4 * lambda);   // weight of loops
     n_ncloop = -2 * cos(4 * lambda); // weight of non-contractible loops
@@ -51,9 +52,8 @@ void print_weights() {
     // cout << "w_straight = " << w_straight << endl;
     // cout << "w_full = " << w_full << endl;
 }
-#pragma endregion
 
-#pragma region R-matrices declarations
+
 // Declare the R-matrix, auxiliary spaces;
 void r_matrix(Vec* v, BV b, int i, int min_defects);
 void insert_aux_space(Vec* v, BV b);
@@ -61,9 +61,8 @@ void contract_aux_space(Vec* v, BV b, int min_defects);
 RMatrix<Vec, int, int> r_i = r_matrix;
 RMatrix<Vec> ins_aux = insert_aux_space;
 RMatrix<Vec, int> contr_aux = contract_aux_space;
-#pragma endregion
 
-#pragma region Implement the R matrix
+
 void translate_lattice(K& k) {
     int tmp = k[lattice_size-1];
     for (int i = lattice_size-2; i >= 0; i--)
@@ -152,9 +151,7 @@ void r_matrix(Vec* v, BV b, int i, int min_defects) {
         r_matrix_occ_occ(v, b, i, min_defects);
     }
 }
-#pragma endregion
 
-#pragma region Auxiliary spaces
 void insert_aux_space(Vec* v, BV b) {
     b.key.shift_right();
 
@@ -185,5 +182,149 @@ void contract_aux_space(Vec* v, BV b, int min_defects) {
     }
 }
 
+void transfer(int k3)
+{
+    // insert aux space
+    vp.mul<>(ins_aux);
+    // multiply by r-matrices
+    for (int i = 0; i < lattice_size; i++)
+    {
+        vp.mul<int, int>(r_i, i, k3);
+    }
+    // contract aux space
+    vp.mul<int>(contr_aux, k3);
+    vp.factorise_norm();
+}
 
-#pragma endregion
+// find the position of the defect just before position pos
+int find_previous_defect(BV b, int pos)
+{
+    int res = pos-1;
+    while (b.key[res] < DEFECT && res > -2) res--;
+    return res;
+}
+
+// cyclically permute the defects of b
+BV pseudo_translation(BV b, int k, int rs, bool with_phase=true)
+{
+    if (k <= 1)
+        return b;
+    int current_defect_pos = find_previous_defect(b, lattice_size);
+    int last_def = b.key[current_defect_pos];
+    int previous_defect_pos;
+
+    for (int i = 0; i < k-1; i++)
+    {
+        previous_defect_pos = find_previous_defect(b, current_defect_pos);
+        b.key.set(current_defect_pos, b.key[previous_defect_pos]);
+        current_defect_pos = previous_defect_pos;
+    }
+    previous_defect_pos = find_previous_defect(b, current_defect_pos);
+    b.key.set(current_defect_pos, last_def);
+
+    V imag_i(0, 1);
+    V pi("3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230");
+    V omega = exp(imag_i * 2 * pi * rs / k); // = e^{i\pi s}
+
+    if (with_phase)
+        b.value *= omega;
+    return b;
+}
+
+BV permute_bottom_defect_labels(BV b, int k, int rs, bool with_phase=true)
+{
+    if (k <= 1 || rs == 0)
+        return b;
+    for (int j = 0; j < lattice_size; j++)
+        if (b.key.is_bottom(j))
+            b.key.set(j, (b.key[j] - BOT_DEF + 1) % k + BOT_DEF);
+
+    if (with_phase)
+    {
+        V imag_i(0, 1);
+        V omega = exp(imag_i * 2 * pi * rs / k); // = e^{i\pi s}
+        b.value *= omega;
+    }
+
+    return b;
+}
+
+// add \sum_k e^{i\pi k s} u^k*b to v
+void project_Zk_rep_bottom(Vec* v, BV b, int k, int rs, bool with_phase=true)
+{
+    if (k <= 1 || rs == 0)
+        (*v)[b.key] = b.value;
+    else for (int i = 0; i < k; i++)
+    {
+        (*v)[b.key] = b.value;
+        b = permute_bottom_defect_labels(b, k, rs, with_phase);
+    }
+}
+
+RMatrix<Vec, int, int, bool> proj_Zk_rep_bot = project_Zk_rep_bottom;
+
+void project_Zk_rep_middle(Vec* v, BV b, int k, int rs, bool with_phase=true)
+{
+    // cout << "projecting state" << endl;
+    // b.print();
+    // cout << endl;
+
+    if (k <= 1 || b.key.nb_defects() != k)
+    {
+        (*v)[b.key] = b.value;
+        return;
+    }
+
+    for (int i = 0; i < k; i++)
+    {
+        (*v)[b.key] += b.value;
+        b = pseudo_translation(b, k, -rs, with_phase);
+    }
+
+    // cout << "projected: ";
+    // v->print();
+    // cout << endl;
+}
+
+RMatrix<Vec, int, int, bool> proj_Zk_rep_middle = project_Zk_rep_middle;
+
+void project_Zk_rep_top(Vec* v, BV b, int k, int rs, bool with_phase=true)
+{
+    if (k <= 1 || rs == 0 || b.key.nb_defects() != k)
+        (*v)[b.key] = b.value;
+    else for (int i = 0; i < k; i++)
+    {
+        (*v)[b.key] = b.value;
+        b = pseudo_translation(b, k, rs, with_phase);
+    }
+}
+
+RMatrix<Vec, int, int, bool> proj_Zk_rep_top = project_Zk_rep_top;
+
+BV parity_reverse(BV b)
+{
+    int tmp;
+    for (int i = 0; i < lattice_size/2; i++)
+    {
+        tmp = b.key[i];
+        b.key.set(i, b.key[lattice_size - 1 - i]);
+        b.key.set(lattice_size - 1 - i, tmp);
+    }
+    for (int i = 0; i < lattice_size; i++)
+    { // restore the arches in the right orientation
+        if (b.key[i] == OPENING)
+            b.key.set(i, CLOSING);
+        else if (b.key[i] == CLOSING)
+            b.key.set(i, OPENING);
+    }
+    return b;
+}
+
+void project_parity(Vec* v, BV b, int parity)
+{
+    (*v)[b.key] += b.value;
+    b = parity_reverse(b);
+    (*v)[b.key] += parity*b.value;
+}
+
+RMatrix<Vec, int> proj_parity = project_parity;

@@ -1,0 +1,181 @@
+/* 
+*
+*  -- LAPACK auxiliary routine (version 2.0) --
+*     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+*     Courant Institute, Argonne National Lab, and Rice University
+*     September 30, 1994 
+*
+*
+*  Purpose
+*  =======
+*
+*  DLANV2 computes the Schur factorization of a real 2-by-2 nonsymmetric
+*  matrix in standard form:
+*
+*       [ A  B ] = [ CS -SN ] [ AA  BB ] [ CS  SN ]
+*       [ C  D ]   [ SN  CS ] [ CC  DD ] [-SN  CS ]
+*
+*  where either
+*  1) CC = 0 so that AA and DD are real eigenvalues of the matrix, or
+*  2) AA = DD and BB*CC < 0, so that AA + or - sqrt(BB*CC) are complex
+*  conjugate eigenvalues.
+*
+*  Arguments
+*  =========
+*
+*  A       (input/output) DOUBLE PRECISION
+*  B       (input/output) DOUBLE PRECISION
+*  C       (input/output) DOUBLE PRECISION
+*  D       (input/output) DOUBLE PRECISION
+*          On entry, the elements of the input matrix.
+*          On exit, they are overwritten by the elements of the
+*          standardised Schur form.
+*
+*  RT1R    (output) DOUBLE PRECISION
+*  RT1I    (output) DOUBLE PRECISION
+*  RT2R    (output) DOUBLE PRECISION
+*  RT2I    (output) DOUBLE PRECISION
+*          The real and imaginary parts of the eigenvalues. If the
+*          eigenvalues are both real, abs(RT1R) >= abs(RT2R); if the
+*          eigenvalues are a complex conjugate pair, RT1I > 0.
+*
+*  CS      (output) DOUBLE PRECISION
+*  SN      (output) DOUBLE PRECISION
+*          Parameters of the rotation matrix.
+*
+*  =====================================================================
+*
+*/
+
+#include "fortranfuncs.h"
+#include <math.h>
+
+template<typename T>
+void dlanv2(T& a, T& b, T& c, T& d, T& rt1r, T& rt1i, T& rt2r, T& rt2i, T& cs, T& sn)
+{
+  T zero=0.0000000000000000;
+  T one=1.000000000000000;
+  T half=0.500000000000000;
+  
+  T aa,bb,cc,cs1,dd,p,sab,sac,sigma,sn1,tau,temp;
+  
+  /* .. Executable Statements ..
+*
+*     Initialize CS and SN */
+  
+  cs=one;
+  sn=zero;
+  
+  if(c==zero)
+    goto label10;
+  else if(b==zero)
+  {
+    /* Swap rows and columns */
+    cs=zero;
+    sn=one;
+    temp=d;
+    d=a;
+    a=temp;
+    b=-c;
+    c=zero;
+    goto label10;
+  }
+  else if( ((a-d)==zero)&&(sign<T>(one,b)!=sign<T>(one,c)) )
+    goto label10;
+  else
+  {
+    /* Make diagonal elements equal */
+    
+    temp=a-d;
+    p=half*temp;
+    sigma=b+c;
+    tau=dlapy2<T>(sigma,temp);
+    cs1=sqrt( half*(one+fabs(sigma)/tau) );
+    sn1=-(p/(tau*cs1))*sign(one,sigma);
+    
+    /*
+*
+*        Compute [ AA  BB ] = [ A  B ] [ CS1 -SN1 ]
+*                [ CC  DD ]   [ C  D ] [ SN1  CS1 ]
+*
+    */
+    aa=a*cs1+b*sn1;
+    bb=-a*sn1+b*cs1;
+    cc=c*cs1+d*sn1;
+    dd=-c*sn1+d*cs1;
+    /*
+*
+*        Compute [ A  B ] = [ CS1  SN1 ] [ AA  BB ]
+*                [ C  D ]   [-SN1  CS1 ] [ CC  DD ]
+*
+    */
+    a=aa*cs1+cc*sn1;
+    b=bb*cs1+dd*sn1;
+    c=-aa*sn1+cc*cs1;
+    d=-bb*sn1+dd*cs1;
+    /*
+*
+*        Accumulate transformation
+*
+    */
+    temp=cs*cs1-sn*sn1;
+    sn=cs*sn1+sn*cs1;
+    cs=temp;
+    
+    temp=half*(a+d);
+    a=temp;
+    d=temp;
+    
+    if(c!=zero)
+    {
+      if(b!=zero)
+      {
+        if(sign(one,b)==sign(one,c))
+        {
+          /* Real eigenvalues: reduce to upper triangular form */
+          sab=sqrt(fabs(b));
+          sac=sqrt(fabs(c));
+          p=sign(sab*sac,c);
+    //      std::cout << "sac*sab = " << sab*sac << ", c = " << c << ", p=" << p << "\n";
+          tau=one/sqrt(fabs(b+c));
+          a=temp+p;
+          d=temp-p;
+          b=b-c;
+          c=zero;
+          cs1=sab*tau;
+          sn1=sac*tau;
+          temp=cs*cs1-sn*sn1;
+          sn=cs*sn1+sn*cs1;
+          cs=temp;
+        }
+      }
+      else
+      {
+        b=-c;
+        c=zero;
+        temp=cs;
+        cs=-sn;
+        sn=temp;
+      }
+    }
+  }
+label10:
+
+  /* Store eigenvalues in (RT1R,RT1I) and (RT2R,RT2I). */
+          
+  rt1r=a;
+  rt2r=d;
+  if(c==zero)
+  {
+    rt1i=zero;
+    rt2i=zero;
+  }
+  else
+  {
+    rt1i=sqrt(fabs(b))*sqrt(fabs(c));
+    rt2i=-rt1i;
+  }
+  return;
+  
+  /* End of DLANV2 */
+}

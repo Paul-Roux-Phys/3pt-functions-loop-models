@@ -1,0 +1,59 @@
+ERROR: LoadError: TaskFailedException
+
+    nested task error: TaskFailedException
+    
+        nested task error: MethodError: Cannot `convert` an object of type RemoteException to an object of type BigFloat
+        
+        Closest candidates are:
+          convert(::Type{T}, !Matched::T) where T<:Number
+           @ Base number.jl:6
+          convert(::Type{T}, !Matched::T) where T
+           @ Base Base.jl:84
+          convert(::Type{T}, !Matched::AbstractChar) where T<:Number
+           @ Base char.jl:185
+          ...
+        
+        Stacktrace:
+         [1] setindex!(A::Vector{BigFloat}, x::RemoteException, i1::Int64)
+           @ Base ./array.jl:1021
+         [2] macro expansion
+           @ ~/transfermatrices/On_loops/cpp_program/omega_3pt.jl:67 [inlined]
+         [3] (::var"#3#threadsfor_fun#13"{var"#3#threadsfor_fun#1#14"{Field{ComplexF64}, Field{ComplexF64}, Field{ComplexF64}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, UnitRange{Int64}}})(tid::Int64; onethread::Bool)
+           @ Main ./threadingconstructs.jl:215
+         [4] #3#threadsfor_fun
+           @ ./threadingconstructs.jl:182 [inlined]
+         [5] (::Base.Threads.var"#1#2"{var"#3#threadsfor_fun#13"{var"#3#threadsfor_fun#1#14"{Field{ComplexF64}, Field{ComplexF64}, Field{ComplexF64}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, UnitRange{Int64}}}, Int64})()
+           @ Base.Threads ./threadingconstructs.jl:154
+    
+    ...and 15 more exceptions.
+    
+    Stacktrace:
+     [1] threading_run(fun::var"#3#threadsfor_fun#13"{var"#3#threadsfor_fun#1#14"{Field{ComplexF64}, Field{ComplexF64}, Field{ComplexF64}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, Vector{BigFloat}, UnitRange{Int64}}}, static::Bool)
+       @ Base.Threads ./threadingconstructs.jl:172
+     [2] macro expansion
+       @ ./threadingconstructs.jl:220 [inlined]
+     [3] omega_parallel(L::Int64, V1::Field{ComplexF64}, V2::Field{ComplexF64}, V3::Field{ComplexF64})
+       @ Main ~/transfermatrices/On_loops/cpp_program/omega_3pt.jl:46
+     [4] macro expansion
+       @ ~/transfermatrices/On_loops/cpp_program/omega_3pt.jl:114 [inlined]
+     [5] macro expansion
+       @ ./timing.jl:395 [inlined]
+     [6] macro expansion
+       @ ~/transfermatrices/On_loops/cpp_program/omega_3pt.jl:113 [inlined]
+     [7] (::var"#64#threadsfor_fun#27"{var"#64#threadsfor_fun#26#28"{UnitRange{Int64}}})(tid::Int64; onethread::Bool)
+       @ Main ./threadingconstructs.jl:215
+     [8] #64#threadsfor_fun
+       @ ./threadingconstructs.jl:182 [inlined]
+     [9] (::Base.Threads.var"#1#2"{var"#64#threadsfor_fun#27"{var"#64#threadsfor_fun#26#28"{UnitRange{Int64}}}, Int64})()
+       @ Base.Threads ./threadingconstructs.jl:154
+
+...and 2 more exceptions.
+
+Stacktrace:
+ [1] threading_run(fun::var"#64#threadsfor_fun#27"{var"#64#threadsfor_fun#26#28"{UnitRange{Int64}}}, static::Bool)
+   @ Base.Threads ./threadingconstructs.jl:172
+ [2] macro expansion
+   @ ./threadingconstructs.jl:220 [inlined]
+ [3] top-level scope
+   @ ~/transfermatrices/On_loops/cpp_program/omega_3pt.jl:219
+in expression starting at /home/roux/transfermatrices/On_loops/cpp_program/omega_3pt.jl:112
