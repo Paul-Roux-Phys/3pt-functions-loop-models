@@ -106,11 +106,13 @@ class LinkPattern : public BasisVector<Key, Weight> {
     void middle_op_ith_site (int max_down_def, int max_up_def, int pos);
     void insert_mid_op (OnState& v);
     void uncolor_defects (OnState& v);
+    void flip ();
+    void project_parity (OnState& v, int sign);  // (1 \pm P)/2 or id if sign=0
 };
 
 class OnState : public Vector<LinkPattern, Hash> {
    public:
-    OnState () : Vector<LinkPattern, Hash> (HASH_SIZE){};
+    OnState () : Vector<LinkPattern, Hash> (HASH_SIZE) {};
     OnState (size_t size) : Vector<LinkPattern, Hash> (size) {}
     OnState (size_t size, LinkPattern l) : Vector<LinkPattern, Hash> (size) {
         *this += l;
@@ -147,12 +149,18 @@ class OnState : public Vector<LinkPattern, Hash> {
         swap (v);
     }
 
-    void transfer (OnState& v) {
+    void project_parity (OnState& v, int sign) {
+        APPLY_TO_EACH (project_parity) (v, sign);
+        swap (v);
+    }
+
+    void transfer (OnState& v, int parity) {
         insert_aux_space (v);
         for (int i = 0; i < L; i++) {
             r_matrix (v, i);
         }
         contract_aux_space (v);
+        project_parity (v, 1);
     }
 
     void uncolor_defects (OnState& v) {

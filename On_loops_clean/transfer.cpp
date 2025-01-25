@@ -1,7 +1,5 @@
 #include "transfer.hpp"
 
-void function () {}
-
 int LinkPattern::arch_end (int i) {
     int site = key[i];
     if (site == EMPTY || is_defect (i)) {
@@ -243,6 +241,30 @@ void LinkPattern::uncolor_defects (OnState& v) {
     v += *this;
 }
 
+void LinkPattern::flip () {
+    int tmp;
+    for (int i = 0; i < L / 2; i++) {
+        tmp = key[L - 1 - i];
+        key.set (L - 1 - i, key[i]);
+        key.set (i, tmp);
+    }
+}
+
+void LinkPattern::project_parity (OnState& v, int sign) {
+    if (sign == 0) {
+        v += *this;
+        return;
+    }
+
+    value /= 2;
+    LinkPattern cpy = *this;
+    v += *this;
+
+    cpy.value *= sign;
+    cpy.flip ();
+    v += cpy;
+}
+
 LinkPattern defects (std::vector<int> positions, Weight phase,
                      std::vector<int> labels) {
     LinkPattern p;
@@ -263,6 +285,10 @@ Weight phase (std::vector<int> positions, int k, int rs) {
 }
 
 // #define SPREAD_POS
+#ifndef SPREAD_POS
+#define FIX_POS
+#endif
+
 #ifdef SPREAD_POS
 OnState spread_defects (int k, int rs, std::vector<int> labels) {
     OnState res (L * L);
@@ -311,7 +337,6 @@ OnState top_state () {
 }
 #endif
 
-#define FIX_POS
 #ifdef FIX_POS
 OnState bottom_state () {
     OnState res;
@@ -321,9 +346,10 @@ OnState bottom_state () {
     }
     std::vector<LinkPattern> ps (k1);
     for (int i = 0; i < ps.size (); i++) {
-        ps[i].value = exp (2 * IM * PI * i * rs1 / k1);
-        for (int pos = 0; pos < k1; pos++) ps[i].key.set (pos, BOT);
-        if (k1 - k2 + k3 > 0) ps[i].key.set (i, REF);
+        ps[i].value = exp (2 * IM * PI * (i + 1) * rs1 / k1);
+        for (int pos = 0; pos < k1; pos++)
+            ps[i].key.set ((pos + L - 1) % L, BOT);
+        if (k1 - k2 + k3 > 0) ps[i].key.set ((i + L - 1) % L, REF);
         res += ps[i];
     }
     return res;
@@ -346,35 +372,45 @@ OnState top_state () {
 }
 #endif
 
-Weight compute_3pt (size_t half_size) {
+Weight compute_3pt (size_t half_size, int sign) {
     OnState s, s2;  // s2 is used as an intermediary variable
     s += bottom_state ();
+    s.print ();
+    s.project_parity (s2, sign);
 
-    for (size_t i = 0; i < half_size; i++) s.transfer (s2);
+    for (size_t i = 0; i < half_size; i++) {
+        s.transfer (s2, sign);
+    }
+
     s.insert_mid_op (s2);
-    for (size_t i = 0; i < half_size; i++) s.transfer (s2);
+    s.project_parity (s2, sign);
+
+    for (size_t i = 0; i < half_size; i++) {
+        s.transfer (s2, sign);
+    }
 
     s.uncolor_defects (s2);
     return s.inner_product (top_state ());
 }
 
 int main (int argc, char* argv[]) {
-    // parse command-line options
+    const char usage[] = "Usage: %s L lambda k1 rs1 k2 rs2 k3 rs3 parity\n";
     int opt;
+    // parse command-line options
     while ((opt = getopt (argc, argv, "h")) != -1) {
         switch (opt) {
             case 'h':
-                printf ("Usage: %s L lambda k1 rs1 k2 rs2 k3 rs3\n", argv[0]);
+                printf (usage, argv[0]);
                 return 0;
             case '?':
-                printf ("Usage: %s L lambda k1 rs1 k2 rs2 k3 rs3\n", argv[0]);
+                printf (usage, argv[0]);
                 break;
         }
     }
 
     // parse other arguments
-    if (argc - optind != 8) {
-        printf ("Usage: %s L lambda k1 rs1 k2 rs2 k3 rs3\n", argv[0]);
+    if (argc - optind != 9) {
+        printf (usage, argv[0]);
         return 1;
     }
     L = std::atoi (argv[optind++]);
@@ -385,10 +421,11 @@ int main (int argc, char* argv[]) {
     rs2 = std::atoi (argv[optind++]);
     k3 = std::atoi (argv[optind++]);
     rs3 = std::atoi (argv[optind++]);
+    int parity = std::atoi (argv[optind++]);
 
     set_weights (lambda);
 
-    cout << compute_3pt (10 * L).real () << endl;
+    cout << compute_3pt (10 * L, parity).real () << endl;
 
     return 0;
 }
