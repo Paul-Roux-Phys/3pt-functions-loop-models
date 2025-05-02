@@ -1,1 +1,5 @@
 /gomod2nix-template
+**/bin/*
+**/obj/*
+**/*.jld2
+**/.ipynb-checkpoints/*
