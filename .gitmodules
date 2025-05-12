@@ -1,7 +1,0 @@
-[submodule "cpp_libs/libtransfermatrices"]
-    path = cpp_libs/libtransfermatrices
-    url = "https://gitlab.com/Paul_Roux/libtransfermatrices"
-    
-[submodule "cpp_libs/arpackpp"]
-    path = cpp_libs/arpackpp
-    url = "https://github.com/m-reuter/arpackpp"

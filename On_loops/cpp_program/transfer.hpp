@@ -6,15 +6,18 @@
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <iostream>
 
-#include "TransferMatrices/Vectors.hpp"
-#include "TransferMatrices/keys.hpp"
+#include "TransferMatrices.hpp"
 
 // Lattice size
 size_t L;
+size_t M;
 #define SIZE (L + 2)
 
 // Hash table size
 size_t HASH_SIZE = (2 << L);  // 2^{L+1}
+
+// Number of iterations of transfer matrix
+int iter = 0;
 
 // Store keys on 64 bit integers. Store each site value on 3 bits.
 #define bits_per_site 3
@@ -46,6 +49,7 @@ Weight n_loop, n_ncloop, w_empty, w_turn, w_straight, w_full;
         "14159265358979323846264338327950288419716939937510582097494459230781" \
         "640628"                                                               \
         "620899862803482534211706798214808651328230")
+Weight omega1, omega3;
 
 // Fields parameters
 int k1, k2, k3;     // 2r1, 2r2, 2r3: numbers of legs
@@ -55,7 +59,7 @@ Weight w1, w2, w3;  // weights of diagonal fields
 
 void set_weights (Weight lambda) {
     n_loop = -2 * cos (4 * lambda);    // weight of loops
-    n_ncloop = -2 * cos (4 * lambda);  // weight of non-contractible loops
+    n_ncloop = n_loop;  // weight of non-contractible loops
     w_empty = 1 + sin (lambda) + sin (3 * lambda) - sin (5 * lambda);
     w_turn = 2 * sin (2 * lambda) * sin ((6 * lambda + M_PI) / 4);
     w_straight = 1 + sin (3 * lambda);
@@ -90,6 +94,7 @@ class LinkPattern : public BasisVector<Key, Weight> {
     }
 
     int arch_end (int i);
+  bool arch_crosses_border (int i);
     void contract_arch_defect (int i);
     void contract_arches (int i);
     bool can_contract_defects (int i);
@@ -106,8 +111,6 @@ class LinkPattern : public BasisVector<Key, Weight> {
     void middle_op_ith_site (int max_down_def, int max_up_def, int pos);
     void insert_mid_op (OnState& v);
     void uncolor_defects (OnState& v);
-    void flip ();
-    void project_parity (OnState& v, int sign);  // (1 \pm P)/2 or id if sign=0
 };
 
 class OnState : public Vector<LinkPattern, Hash> {
@@ -149,24 +152,21 @@ class OnState : public Vector<LinkPattern, Hash> {
         swap (v);
     }
 
-    void project_parity (OnState& v, int sign) {
-        APPLY_TO_EACH (project_parity) (v, sign);
-        swap (v);
-    }
-
-    void transfer (OnState& v, int parity) {
+    void transfer (OnState& v) {
         insert_aux_space (v);
         for (int i = 0; i < L; i++) {
             r_matrix (v, i);
         }
         contract_aux_space (v);
-        project_parity (v, 1);
+	iter += 1;
     }
 
     void uncolor_defects (OnState& v) {
         APPLY_TO_EACH (uncolor_defects) (v);
         swap (v);
     }
+
+  void matrix_mul (OnState& v);
 };
 
 #endif  // TRANSFER_HPP

@@ -14,7 +14,7 @@ addprocs(exeflags="-t 4")
     k2, rs2 = 2, 0
     k3, rs3 = 1, 0
 
-    Lrange = 4:4
+    Lrange = 4:5
 
     nb_values_λ = 16
     λ_min = 0.43
