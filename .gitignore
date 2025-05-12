@@ -1,4 +1,5 @@
 **/Manifest.toml
+.direnv
 **/.vscode
 **/.cache
 **/.DS_Store
