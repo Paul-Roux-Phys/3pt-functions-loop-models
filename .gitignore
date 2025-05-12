@@ -6,5 +6,6 @@
 **/bin/
 **/obj/
 **/scripts/
-**/results/
+**/results/**
+**/*.jld2
 slurm_scripts/
