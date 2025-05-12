@@ -1,0 +1,3 @@
+[submodule "libs/libtransfermatrices"]
+	path = libs/libtransfermatrices
+	url = https://github.com/Paul-Roux-Phys/lib_transfer_matrices.git
