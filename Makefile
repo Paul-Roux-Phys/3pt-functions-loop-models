@@ -1,6 +1,16 @@
 # Compiler
-CXX         := g++
-CXXFLAGS    := -Wall -Wextra -O3
+CXX         := clang++
+CXXFLAGS    := -Wall -Wextra -O3 -stdlib=libc++
+CXXFLAGS    += -std=c++23
+LDFLAGS     := 
+
+# External libraries
+CXXFLAGS    += -isystem $(shell nix eval --raw nixpkgs#llvmPackages.libcxx.dev)/include/c++/v1
+SDK_PATH    := $(shell xcrun --show-sdk-path)
+CXXFLAGS    += -isysroot $(SDK_PATH)
+CXXFLAGS    += $(shell pkg-config --cflags gmp)
+CXXFLAGS    += $(shell pkg-config --cflags mpfr)
+LDFLAGS     += $(shell pkg-config --libs mpfr)
 
 # Directories
 EXAMPLES_DIR := examples
@@ -15,21 +25,22 @@ TEST_SOURCES := $(wildcard $(TEST_DIR)/*.cpp)
 TEST_BINARIES := $(patsubst $(TEST_DIR)/%.cpp,$(TEST_DIR)/$(BUILD_DIR)/%,$(TEST_SOURCES))
 
 # Default target
-all: examples test
+all: examples tests
 
 # Build examples
 examples: $(EXAMPLES_BINARIES)
 
 $(EXAMPLES_DIR)/$(BUILD_DIR)/%: $(EXAMPLES_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
 
 # Build tests
 tests: $(TEST_BINARIES)
 
 $(TEST_DIR)/$(BUILD_DIR)/%: $(TEST_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
+
 
 # Run tests after building
 run-tests: tests
