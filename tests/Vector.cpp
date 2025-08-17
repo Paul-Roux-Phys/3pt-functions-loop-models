@@ -45,7 +45,9 @@ int main() {
   assert(v3[3] ==  2);
   assert(v.empty());
 
-  std::cout << v3 << std::endl;
+  v3 *= 1/12.0;
+
+  assert(v3[0] == 1 && v3[3] == 1.0/6.0);
 
   return 0;
 }

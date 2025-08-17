@@ -22,6 +22,9 @@
             mpfr     # Multiple Precision Floating-Point library
             gmp
           ];
+          buildInputs = with pkgs; [
+            doxygen
+          ];
         };
   };
 }

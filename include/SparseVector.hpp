@@ -1,3 +1,5 @@
+#pragma once
+
 #include "unordered_dense.hpp"
 #include <concepts>
 #include <iostream>
@@ -17,7 +19,7 @@ struct custom_hash_uint64_t {
   }
 };
 
-template <SelfAddAndMul Value> class Vector {
+template <typename Value> class Vector {
 public:
   using Key = uint64_t;
 
@@ -25,8 +27,6 @@ private:
   using HashMap = ankerl::unordered_dense::map<Key, Value, custom_hash_uint64_t,
                                                std::equal_to<>>;
   HashMap hashmap;
-  Key key;
-  Value value;
 
 public:
   Vector(size_t _size) : hashmap(_size) {}
@@ -132,9 +132,15 @@ public:
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Vector &v) {
-    for (auto& it : v) {
+    for (auto &it : v) {
       os << it.first << "  =>  " << it.second << std::endl;
     }
     return os;
+  }
+
+  void operator*=(Value v) {
+    for (auto &it : *this) {
+      it.second *= v;
+    }
   }
 };
