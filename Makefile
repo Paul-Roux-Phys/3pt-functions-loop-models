@@ -32,9 +32,9 @@ MPC_SRC_DIR    := $(THIRDPARTY)/mpc-$(MPC_VERSION)
 MPC_BUILD_DIR  := $(THIRDPARTY)/build/mpc
 
 # System detection
-HAVE_GMP  := $(shell pkg-config --exists gmp  && echo yes || echo no)
-HAVE_MPFR := $(shell pkg-config --exists mpfr && echo yes || echo no)
-HAVE_MPC  := $(shell pkg-config --exists mpc  && echo yes || echo no)
+HAVE_GMP := $(shell command -v pkg-config >/dev/null 2>&1 && pkg-config --exists gmp && echo yes || echo no)
+HAVE_MPFR := $(shell command -v pkg-config >/dev/null 2>&1 && pkg-config --exists mpfr && echo yes || echo no)
+HAVE_MPC := $(shell command -v pkg-config >/dev/null 2>&1 && pkg-config --exists mpc && echo yes || echo no)
 
 # Dependency selection
 ifeq ($(HAVE_GMP),yes)
