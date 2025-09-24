@@ -32,7 +32,6 @@ int main(void) {
   v.add(l, 2.34);
 
   Weight w = 2.34;
-  cout << w << endl;
 
   int nb_multiplications = 10;
   auto start = std::chrono::high_resolution_clock::now();
@@ -58,8 +57,5 @@ int main(void) {
 
   M.MultMv(vec, vec2);
 
-  for (int i = 0; i < 10; i++) {
-    cout << vec2[i] << std::setprecision(10) << endl;
-  }
   return 0;
 }
