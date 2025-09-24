@@ -49,7 +49,7 @@ ns = @. -2 * cos(4 * data_3pt(2, 2, 2)[6].lambda)
 # Normalised three-point function
 res = Dict()
 for (k1, k2, k3) in [(2, 2, 2), (1, 2, 3), (3, 2, 1), (3, 2, 3),
-                     (4, 2, 2), (4, 2, 4), (4, 1, 3)]
+                     (4, 2, 2), (4, 2, 4), (4, 1, 3), (3, 1, 2)]
     Z3pt = data_3pt(k1, k2, k3)
     Zbt1 = data_2pt(k1, 0, k1)
     Zbt2 = data_2pt(k2, 0, k2)
@@ -71,6 +71,14 @@ extrapolate(Ls, Cs) = fit(1 ./ Ls, Cs)(0)
 
 include("cft_prediction.jl")
 
+m22(s) = if 0 <= s <= 1 s else s-2 end
+function ltx_fmt(s)
+    if s % 1 == 0 return LaTeXString("$(Int(s))") end
+    num = numerator(s)
+    den = denominator(s)
+    return LaTeXString("\\frac{$num}{$den}")
+end
+
 function plot_C(ωs, k1=2, k2=2, k3=2, rs1=0, rs2=0, rs3=0, factors=Dict(), extra=true)
     Lrange_extr = Lrange
     extr = [extrapolate(Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][i])*factors[(k1, k2, k3)][(rs1, rs2, rs3)](L) for L in Lrange_extr])
@@ -79,15 +87,14 @@ function plot_C(ωs, k1=2, k2=2, k3=2, rs1=0, rs2=0, rs3=0, factors=Dict(), extr
     for L in Lrange[3:end]
         scatter!(ns, abs.(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"])*factors[(k1, k2, k3)][(rs1, rs2, rs3)](L), label=L"L=%$L")
     end
-    plot!(title="C_{($(k1//2),$(2*rs1//k1)),($(k2//2), $(2*rs2//k2)), ($(k3//2), $(m22(2*rs3//k3)))}")
+    plot_title = L"C_{(%$(ltx_fmt(k1//2)), %$(ltx_fmt(2*rs1//k1))), (%$(ltx_fmt(k2//2)), %$(ltx_fmt(2*rs2//k2))), (%$(ltx_fmt(k3//2)), %$(ltx_fmt(m22(2*rs3//k3))))}"
+    plot!(title=plot_title, xlabel="n")
     if extra
         scatter!(ns, extr, label="extrapolation")
     end
     plot!(nsref, abs.(ωs[k1, k2, k3, rs1, rs2, rs3]), label="ω")
     display(plot!())
 end
-
-m22(s) = if 0 <= s <= 1 s else s-2 end
 
 begin
     factors = Dict()
@@ -104,6 +111,10 @@ begin
         (0, 0, 1) => L -> 1,
         (0, 1, 0) => L -> 1,
         (0, 1, 1) => L -> π * sqrt(2) / L,
+    )
+    factors[3, 1, 2] = Dict(
+        (0, 0, 0) => L->1,
+        (0, 0, 1) => L->1/sqrt(2),
     )
     factors[3, 2, 3] = Dict(
         (0, 0, 0) => L->1,
@@ -149,7 +160,7 @@ begin
         (1, 0, 0) => L->1,
         (1, 0, 1) => L->1,
         (1, 0, 2) => L->1,
-        # (2, 0, 0) => L->1, # bad convergence 
+        (2, 0, 0) => L->1, # bad convergence 
         # (2, 0, 1) => L->1, # bad convergence 
     )
     ωs = Dict(
@@ -198,22 +209,20 @@ begin
     ωs[(4, 2, 4, 1, 1, 3)] = [ωref(βs[i], ((2, 1//2), (1, 1), (2, -1//2)), DGs[i])
                               for i in eachindex(βs)]
 
-
     for (k1, k2, k3) in [(2, 2, 2), (1, 2, 3), (3, 2, 3),
                          (4, 2, 2), (4, 2, 4), (4, 1, 3)]
         for (rs1, rs2, rs3) in sort(collect(keys(factors[k1, k2, k3])))
-        # for (rs1, rs2, rs3) in [(1, 1, 3)]
             plot_C(ωs, k1, k2, k3, rs1, rs2, rs3, factors)
-            # savefig("../plots/saved/$k1$k2$(k3)_$rs1$rs2$rs3.pdf")
+            savefig("../plots/saved/$k1$k2$(k3)_$rs1$rs2$rs3.pdf")
         end
     end
 end
 
-k1, k2, k3, rs1, rs2, rs3 = (4, 2, 4, 1, 1, 2)
+k1, k2, k3, rs1, rs2, rs3 = (4, 1, 3, 2, 0, 0)
 Lrange_extr = Lrange
 range = 0:0.01:0.25
-scatter(1 ./ Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][6])/L for L in Lrange_extr] )
-plot!(range, fit(1 ./ Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][6])/L for L in Lrange_extr]).(range))
+scatter(1 ./ Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][6]) for L in Lrange_extr] )
+plot!(range, fit(1 ./ Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][6]) for L in Lrange_extr]).(range))
 
 
 fit(1 ./ Lrange_extr, [abs(res[k1, k2, k3][L][!, "C$rs1$rs2$rs3"][8])/L for L in Lrange_extr])(0)

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <iostream>
+#include <math.h>
 
 extern unsigned int L;
 
@@ -11,7 +12,7 @@ namespace OnLoops {
 
 template <typename Weight> struct Parameters {
   int min_defects;
-  int k2;
+  int k1, k2, k3;
   Weight lambda;
   Weight n_loop;
   Weight n_ncloop;
@@ -20,8 +21,8 @@ template <typename Weight> struct Parameters {
   Weight w_straight;
   Weight w_full;
 
-  Parameters(int _min_defects, int _k2, Weight lambda)
-      : min_defects(_min_defects), k2(_k2) {
+  Parameters(int _k1 = 0, int _k2 = 0, int _k3 = 0, Weight lambda = 0.5)
+      : min_defects(_k3), k1(_k1), k2(_k2), k3(_k3) {
     n_loop = -2. * cos(4. * lambda);   // weight of loops
     n_ncloop = -2. * cos(4. * lambda); // weight of non-contractible loops
     w_empty = 1. + sin(lambda) + sin(3. * lambda) - sin(5. * lambda);
@@ -39,8 +40,6 @@ enum { EMPTY, OPEN, CLOSE, REF, BOT, MID, ERROR };
 
 template <typename Weight> class LinkPattern {
 private:
-  using OnState = OnState<Weight>;
-  using Parameters = Parameters<Weight>;
 
 public:
   uint64_t bitfield;
@@ -68,32 +67,33 @@ public:
   int arch_end(int i);
   void contract_arch_defect(int i);
   void contract_arches(int i);
-  bool can_contract_defects(int i, Parameters &p);
-  bool can_contract_sites(int i, Parameters &p);
-  Weight contract(int i, Weight w, Parameters &p);
+  bool can_contract_defects(int i, Parameters<Weight> &p);
+  bool can_contract_sites(int i, Parameters<Weight> &p);
+  Weight contract(int i, Weight w, Parameters<Weight> &p);
   void move_strand(int i);
   void put_arch(int i);
-  void r_matrix_empty_empty(OnState &v, int pos, Weight w, Parameters &p);
-  void r_matrix_empty_occ(OnState &v, int pos, Weight w, Parameters &p);
-  void r_matrix_occ_occ(OnState &v, int pos, Weight w, Parameters &p);
-  void r_matrix(OnState &v, int pos, Weight w, Parameters &p);
-  void insert_aux_space(OnState &v, Weight w);
-  void contract_aux_space(OnState &v, Weight w, Parameters &p);
+  void r_matrix_empty_empty(OnState<Weight> &v, int pos, Weight w, Parameters<Weight> &p);
+  void r_matrix_empty_occ(OnState<Weight> &v, int pos, Weight w, Parameters<Weight> &p);
+  void r_matrix_occ_occ(OnState<Weight> &v, int pos, Weight w, Parameters<Weight> &p);
+  void r_matrix(OnState<Weight> &v, int pos, Weight w, Parameters<Weight> &p);
+  void insert_aux_space(OnState<Weight> &v, Weight w);
+  void contract_aux_space(OnState<Weight> &v, Weight w, Parameters<Weight> &p);
   void middle_op_ith_site(int max_down_def, int max_up_def, int pos);
-  void insert_mid_op(OnState &v, Weight w, Parameters &p);
-  void uncolor_defects(OnState &v, Weight w);
+  void insert_mid_op(OnState<Weight> &v, Weight w, Parameters<Weight> &p);
+  void uncolor_defects(OnState<Weight> &v, Weight w);
 };
 
 template <typename Weight> class OnState : public Vector<Weight> {
 public:
-  using Parameters = Parameters<Weight>;
   using Vector<Weight>::Vector;
-  using Vector<Weight>::drain;
-  void r_matrix(OnState &v, int i, Parameters &p);
+  // long double get_norm_sq();
+  // long double get_norm();
+  // void factorize_norm();
+  void r_matrix(OnState &v, int i, Parameters<Weight> &p);
   void insert_aux_space(OnState &v);
-  void contract_aux_space(OnState &v, Parameters &p);
+  void contract_aux_space(OnState &v, Parameters<Weight> &p);
   void insert_mid_op(OnState &v);
-  void transfer(OnState &v, Parameters &p);
+  void transfer(OnState &v, Parameters<Weight> &p);
   void uncolor_defects(OnState &v);
 };
 
@@ -175,14 +175,14 @@ template <typename Weight> int LinkPattern<Weight>::arch_end(int i) {
 
 template <typename Weight>
 void LinkPattern<Weight>::contract_arch_defect(int i) {
-  int ip1 = (i + 1) % L + 2;
+  int ip1 = (i + 1) % (L + 2);
   int arch = is_defect(i) ? ip1 : i;
   int def = is_defect(i) ? i : ip1;
   set_site(arch_end(arch), (*this)[def]);
 }
 
 template <typename Weight> void LinkPattern<Weight>::contract_arches(int i) {
-  int ip1 = (i + 1) % L + 2;
+  int ip1 = (i + 1) % (L + 2);
   int site1 = (*this)[i], site2 = (*this)[ip1];
   if ((site1 != OPEN && site1 != CLOSE) || (site2 != OPEN && site2 != CLOSE)) {
     return;
@@ -197,8 +197,8 @@ template <typename Weight> void LinkPattern<Weight>::contract_arches(int i) {
 }
 
 template <typename Weight>
-bool LinkPattern<Weight>::can_contract_defects(int i, Parameters &p) {
-  int ip1 = (i + 1) % L + 2;
+bool LinkPattern<Weight>::can_contract_defects(int i, Parameters<Weight> &p) {
+  int ip1 = (i + 1) % (L + 2);
   return (
       !is_ref(i) && !is_ref(ip1) &&
       ((is_bottom(i) && is_middle(ip1)) || (is_bottom(ip1) && is_middle(i))) &&
@@ -206,13 +206,13 @@ bool LinkPattern<Weight>::can_contract_defects(int i, Parameters &p) {
 }
 
 template <typename Weight>
-bool LinkPattern<Weight>::can_contract_sites(int i, Parameters &p) {
+bool LinkPattern<Weight>::can_contract_sites(int i, Parameters<Weight> &p) {
   int ip1 = (i + 1) % (L + 2);
   return (can_contract_defects(i, p) || !is_defect(i) || !is_defect(ip1));
 }
 
 template <typename Weight>
-Weight LinkPattern<Weight>::contract(int i, Weight w, Parameters &p) {
+Weight LinkPattern<Weight>::contract(int i, Weight w, Parameters<Weight> &p) {
   int ip1 = (i + 1) % (L + 2);
   if ((*this)[i] == OPEN &&
       (*this)[ip1] == CLOSE) { // closing a contractible loop
@@ -247,8 +247,8 @@ template <typename Weight> void LinkPattern<Weight>::put_arch(int i) {
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::r_matrix_empty_empty(OnState &v, int i, Weight w,
-                                               Parameters &p) {
+void LinkPattern<Weight>::r_matrix_empty_empty(OnState<Weight> &v, int i, Weight w,
+                                               Parameters<Weight> &p) {
   LinkPattern copy = *this;
 
   v.add(*this, w * p.w_empty);
@@ -258,8 +258,8 @@ void LinkPattern<Weight>::r_matrix_empty_empty(OnState &v, int i, Weight w,
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::r_matrix_empty_occ(OnState &v, int i, Weight w,
-                                             Parameters &p) {
+void LinkPattern<Weight>::r_matrix_empty_occ(OnState<Weight> &v, int i, Weight w,
+                                             Parameters<Weight> &p) {
   LinkPattern copy = *this;
 
   v.add(*this, w * p.w_turn);
@@ -269,8 +269,8 @@ void LinkPattern<Weight>::r_matrix_empty_occ(OnState &v, int i, Weight w,
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::r_matrix_occ_occ(OnState &v, int i, Weight w,
-                                           Parameters &p) {
+void LinkPattern<Weight>::r_matrix_occ_occ(OnState<Weight> &v, int i, Weight w,
+                                           Parameters<Weight> &p) {
   LinkPattern copy = *this;
 
   v.add(*this, w * p.w_full);
@@ -288,7 +288,7 @@ void LinkPattern<Weight>::r_matrix_occ_occ(OnState &v, int i, Weight w,
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::r_matrix(OnState &v, int i, Weight w, Parameters &p) {
+void LinkPattern<Weight>::r_matrix(OnState<Weight> &v, int i, Weight w, Parameters<Weight> &p) {
   int ip1 = (i + 1) % (L + 2);
   if ((*this)[i] == EMPTY && (*this)[ip1] == EMPTY) {
     r_matrix_empty_empty(v, i, w, p);
@@ -300,7 +300,7 @@ void LinkPattern<Weight>::r_matrix(OnState &v, int i, Weight w, Parameters &p) {
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::insert_aux_space(OnState &v, Weight w) {
+void LinkPattern<Weight>::insert_aux_space(OnState<Weight> &v, Weight w) {
   shift_right();
 
   LinkPattern copy = *this;
@@ -315,8 +315,8 @@ void LinkPattern<Weight>::insert_aux_space(OnState &v, Weight w) {
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::contract_aux_space(OnState &v, Weight w,
-                                             Parameters &p) {
+void LinkPattern<Weight>::contract_aux_space(OnState<Weight> &v, Weight w,
+                                             Parameters<Weight> &p) {
   int i1 = L, i2 = L + 1;
   if ((*this)[i1] == EMPTY && (*this)[i2] == EMPTY) {
     v.add(*this, w);
@@ -374,7 +374,7 @@ void LinkPattern<Weight>::middle_op_ith_site(int nb_down_def, int nb_up_def,
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::insert_mid_op(OnState &v, Weight w, Parameters &p) {
+void LinkPattern<Weight>::insert_mid_op(OnState<Weight> &v, Weight w, Parameters<Weight> &p) {
   if (p.k2 % 2 == 0) {
     for (int i = 0; i < p.k2 / 2; i++)
       middle_op_ith_site(p.k2 / 2, p.k2 / 2, i);
@@ -393,7 +393,7 @@ void LinkPattern<Weight>::insert_mid_op(OnState &v, Weight w, Parameters &p) {
 }
 
 template <typename Weight>
-void LinkPattern<Weight>::uncolor_defects(OnState &v, Weight w) {
+void LinkPattern<Weight>::uncolor_defects(OnState<Weight> &v, Weight w) {
   for (unsigned int i = 0; i < L; i++)
     if ((*this)[i] == MID)
       set_site(i, BOT);
@@ -416,41 +416,69 @@ std::ostream &operator<<(std::ostream &os, const OnState<Weight> &v) {
   return os;
 };
 
+// template <typename Weight> long double OnState<Weight>::get_norm_sq() {
+//   long double tmp = 0.0;
+//   for (auto &it : *this) {
+//     tmp += it.second * it.second;
+//   }
+//   return norm_sq * tmp;
+// }
+
+// template <typename Weight> long double OnState<Weight>::get_norm() {
+//   return sqrt(get_norm_sq());
+// }
+
+// template <typename Weight> void OnState<Weight>::factorize_norm() {
+//   long double tmp = 0.0;
+//   for (auto &it : *this) {
+//     tmp += it.second * it.second;
+//   }
+//   long double invsqrt_tmp = 1/(sqrt(tmp));
+//   for (auto &it : *this) {
+//     it.second *= invsqrt_tmp;
+//   }
+//   norm_sq *= tmp;
+// }
+
 template <typename Weight>
-void OnState<Weight>::r_matrix(OnState<Weight> &v, int i, Parameters &p) {
-  for (auto &it : drain()) {
-    LinkPattern<Weight> lp(it.first);
-    lp.r_matrix(v, i, it.second, p);
+void OnState<Weight>::r_matrix(OnState<Weight> &v, int i, Parameters<Weight> &p) {
+  for (auto it = this->begin(); it != this->end(); ) {
+    LinkPattern<Weight> lp(it->first);
+    lp.r_matrix(v, i, it->second, p);
+    it = this->erase(it);
   }
   this->swap(v);
 }
 template <typename Weight>
 void OnState<Weight>::insert_aux_space(OnState<Weight> &v) {
-  for (auto &it : drain()) {
-    LinkPattern<Weight> lp(it.first);
-    lp.insert_aux_space(v, it.second);
+  for (auto it = this->begin(); it != this->end(); ) {
+    LinkPattern<Weight> lp(it->first);
+    lp.insert_aux_space(v, it->second);
+    it = this->erase(it);
   }
   this->swap(v);
 }
 template <typename Weight>
-void OnState<Weight>::contract_aux_space(OnState<Weight> &v, Parameters &p) {
-  for (auto &it : drain()) {
-    LinkPattern<Weight> lp(it.first);
-    lp.contract_aux_space(v, it.second, p);
+void OnState<Weight>::contract_aux_space(OnState<Weight> &v, Parameters<Weight> &p) {
+  for (auto it = this->begin(); it != this->end(); ) {
+    LinkPattern<Weight> lp(it->first);
+    lp.contract_aux_space(v, it->second, p);
+    it = this->erase(it);
   }
   this->swap(v);
 }
 template <typename Weight>
 void OnState<Weight>::insert_mid_op(OnState<Weight> &v) {
-  for (auto &it : drain()) {
-    LinkPattern<Weight> lp(it.first);
-    lp.insert_mid_op(v, it.second);
+  for (auto it = this->begin(); it != this->end(); ) {
+    LinkPattern<Weight> lp(it->first);
+    lp.insert_mid_op(v, it->second);
+    it = this->erase(it);
   }
   this->swap(v);
 }
 
 template <typename Weight>
-void OnState<Weight>::transfer(OnState<Weight> &v, Parameters &p) {
+void OnState<Weight>::transfer(OnState<Weight> &v, Parameters<Weight> &p) {
   insert_aux_space(v);
   for (unsigned int i = 0; i < L; i++) {
     r_matrix(v, i, p);

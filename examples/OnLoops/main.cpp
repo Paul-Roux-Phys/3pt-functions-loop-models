@@ -1,6 +1,5 @@
-#include <print>
-#include <iostream>
 #include <complex>
+#include <iostream>
 
 #include "OnLoops.hpp"
 
@@ -11,7 +10,7 @@ using Weight = std::complex<double>;
 
 int main() {
   L = 4;
-  Parameters<Weight> params(2, 2, 0.5);
+  Parameters<Weight> params(2, 2, 2, 0.5);
   
   LinkPattern<Weight> l({EMPTY, EMPTY, OPEN, CLOSE});
 

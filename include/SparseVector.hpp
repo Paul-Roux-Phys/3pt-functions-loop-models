@@ -1,24 +1,18 @@
 #pragma once
 
 #include "unordered_dense.hpp"
-#include <concepts>
 #include <iostream>
 
-// type that implements += and *
-template <typename T>
-concept SelfAddAndMul = requires(T a, T b) {
-  { a += b } -> std::same_as<T &>;
-  { a *b } -> std::same_as<T>;
-};
-
 struct custom_hash_uint64_t {
-  using is_avalanching = void;
+  using is_avalanching = void; // keep the optimization hint for ankerl map
   [[nodiscard]] auto operator()(uint64_t const &f) const noexcept -> uint64_t {
-    static_assert(std::has_unique_object_representations_v<uint64_t>);
-    return ankerl::unordered_dense::detail::wyhash::hash(&f, sizeof(f));
+    uint64_t x = f;
+    x ^= x >> 33;
+    x *= 0xff51afd7ed558ccdULL;
+    x ^= x >> 33;
+    return x;
   }
 };
-
 template <typename Value> class Vector {
 public:
   using Key = uint64_t;
@@ -31,6 +25,17 @@ private:
 public:
   Vector(size_t _size) : hashmap(_size) {}
   ~Vector() { hashmap.clear(); }
+
+  // Copy constructor
+  Vector(const Vector& other) : hashmap(other.hashmap) {}
+
+  // Copy assignment operator
+  Vector& operator=(const Vector& other) {
+    if (this != &other) {
+      hashmap = other.hashmap;
+    }
+    return *this;
+  }
 
   /* optimized addition:
      lookup key. if key not found, insert new (key, value) pair.
@@ -60,6 +65,7 @@ public:
   HashMap::iterator end() { return hashmap.end(); }
   HashMap::const_iterator begin() const { return hashmap.begin(); }
   HashMap::const_iterator end() const { return hashmap.end(); }
+  HashMap::iterator erase(HashMap::iterator it) { return hashmap.erase(it); }
 
   void clear() { hashmap.clear(); }
   bool empty() { return hashmap.empty(); }
@@ -88,48 +94,46 @@ public:
   auto size() { return hashmap.size(); }
 
   // Fast draining: clears after iteration, frees memory along the way
-  auto drain() {
-    struct DrainingIterator {
-      using UnderlyingIter = typename HashMap::iterator;
-      UnderlyingIter it;
+  // auto drain() {
+  //   struct DrainingIterator {
+  //     using UnderlyingIter = typename HashMap::iterator;
+  //     UnderlyingIter it;
 
-      // Constructor
-      DrainingIterator(UnderlyingIter iter) : it(iter) {}
+  //     // Constructor
+  //     DrainingIterator(UnderlyingIter iter) : it(iter) {}
 
-      // Dereference returns reference to key-value pair
-      auto &operator*() const { return *it; }
-      auto *operator->() const { return &(*it); }
+  //     // Dereference returns reference to key-value pair
+  //     auto &operator*() const { return *it; }
+  //     auto *operator->() const { return &(*it); }
 
-      // Pre-increment: call clear on value, then advance iterator
-      DrainingIterator &operator++() {
-        // it->second.clear ();  // or mpfr_clear(it->second) if raw
-        // mpfr_t
-        ++it;
-        return *this;
-      }
+  //     // Pre-increment: call clear on value, then advance iterator
+  //     DrainingIterator &operator++() {
+  //       ++it;
+  //       return *this;
+  //     }
 
-      // Equality/Inequality
-      bool operator==(const DrainingIterator &other) const {
-        return it == other.it;
-      }
-      bool operator!=(const DrainingIterator &other) const {
-        return it != other.it;
-      }
-    };
+  //     // Equality/Inequality
+  //     bool operator==(const DrainingIterator &other) const {
+  //       return it == other.it;
+  //     }
+  //     bool operator!=(const DrainingIterator &other) const {
+  //       return it != other.it;
+  //     }
+  //   };
 
-    struct DrainingRange {
-      HashMap &map;
+  //   struct DrainingRange {
+  //     HashMap &map;
 
-      DrainingIterator begin() { return DrainingIterator{map.begin()}; }
-      DrainingIterator end() { return DrainingIterator{map.end()}; }
+  //     DrainingIterator begin() { return DrainingIterator{map.begin()}; }
+  //     DrainingIterator end() { return DrainingIterator{map.end()}; }
 
-      ~DrainingRange() {
-        map.clear(); // clear whole map at the end as backup
-      }
-    };
+  //     ~DrainingRange() {
+  //       map.clear(); // clear whole map at the end as backup
+  //     }
+  //   };
 
-    return DrainingRange{hashmap};
-  }
+  //   return DrainingRange{hashmap};
+  // }
 
   friend std::ostream &operator<<(std::ostream &os, const Vector &v) {
     for (auto &it : v) {

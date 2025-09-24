@@ -14,13 +14,13 @@
         pkgs.mkShell {
           name = "SparseVectors";
           nativeBuildInputs = with pkgs; [
-            llvmPackages.clang-tools      # g++, gcc, etc.
-            llvmPackages.clang      # g++, gcc, etc.
-            llvmPackages.libcxx.dev
+            gcc
             gnumake
             pkg-config
             mpfr     # Multiple Precision Floating-Point library
-            gmp
+            libmpc   # Multiple precision complex floats
+            arpack   # eigensolver
+            cln
           ];
           buildInputs = with pkgs; [
             doxygen

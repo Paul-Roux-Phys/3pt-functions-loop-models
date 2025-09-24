@@ -1,3 +1,8 @@
 /compile_commands.json
 /.envrc
 /docs/
+/**/L=*[_]lambda=*.csv
+/Makefile.bear
+/projects/loop3pt_123/
+/projects/loop3pt_222/
+/projects/loop3pt_323/
