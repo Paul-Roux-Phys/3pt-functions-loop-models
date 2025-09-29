@@ -26,5 +26,14 @@ jobs:
       - name: Run tests
         run: make -C ./3pt_spin run-tests
 
-      - name: Build program
+      - name: Build 3pt_spin
         run: make -C ./3pt_spin
+
+      - name: Build 3pt_spinless
+        run: make -C ./3pt_spinless
+
+      - name: Build 3pt_diagonal
+        run: make -C ./3pt_diagonal
+        
+      - name: Build 3pt_enclosure
+        run: make -C ./3pt_enclosure
