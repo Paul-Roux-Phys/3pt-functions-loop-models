@@ -1,6 +1,6 @@
 # Three-point functions in loop models
 
-The repository contains the code used to produce the numerical results in the paper arxiv:25##.#####.
+This repository contains the code used to produce the numerical results in the paper arxiv:25##.#####.
 
 ## Spinless cases
 
