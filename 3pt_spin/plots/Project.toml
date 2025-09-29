@@ -1,0 +1,7 @@
+[deps]
+BarnesDoubleGamma = "8c4ec0a7-3a81-41b6-9d5f-01f75984e8d3"
+BootstrapVirasoro = "ca6c609c-7c6b-4ea6-be06-ee6e3ced7d6c"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
