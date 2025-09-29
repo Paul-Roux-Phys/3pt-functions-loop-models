@@ -27,4 +27,4 @@ jobs:
         run: make -C ./3pt_spin run-tests
 
       - name: Build program
-        run: make
+        run: make -C ./3pt_spin
